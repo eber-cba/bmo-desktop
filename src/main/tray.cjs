@@ -3,37 +3,14 @@
 
 const { Menu, Tray, app, nativeImage } = require('electron')
 
-/**
- * Crea un ícono de tray de 16x16 en formato PNG usando raw bytes.
- * Color: teal (#4ecdc4) — el color de BMO.
- * No requiere ningún archivo externo.
- */
-function createBmoIcon() {
-  // PNG 16x16 sólido color teal (#4e, #cd, #c4) — generado manualmente
-  // Estructura: cabecera PNG + IHDR + IDAT (comprimido) + IEND
-  const WIDTH = 16
-  const HEIGHT = 16
-
-  // Usamos nativeImage con un dataURL de un PNG mínimo válido
-  // Este es un PNG 16x16 color #4ecdc4 generado y codificado correctamente
-  const TEAL_PNG_BASE64 = [
-    'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAJklEQVQoz2Ngw',
-    'A3+//9PimaGUTAKhj8AAAD//wMAUe0DqzHJbWsAAAAASUVORK5CYII='
-  ].join('')
-
-  try {
-    return nativeImage.createFromDataURL(`data:image/png;base64,${TEAL_PNG_BASE64}`)
-  } catch {
-    return nativeImage.createEmpty()
-  }
-}
+const path = require('path')
 
 function createTray(win) {
   let tray
 
   try {
-    const icon = createBmoIcon()
-    tray = new Tray(icon)
+    const iconPath = path.join(__dirname, 'assets', 'tray-icon.png')
+    tray = new Tray(iconPath)
   } catch (err) {
     console.warn('[BMO Tray] ⚠️  No se pudo crear el tray:', err.message)
     console.warn('[BMO Tray] Continuando sin system tray...')
