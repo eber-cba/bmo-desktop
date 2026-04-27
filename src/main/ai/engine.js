@@ -60,12 +60,34 @@ ${factsStr || 'Aún no sabes mucho sobre el usuario. ¡Pregúntale su nombre!'}
       }
 
       const data = await response.json()
-      return data.message.content
+      const rawContent = data.message.content.trim()
+
+      // Detectar si la IA quiere usar una herramienta (responde con JSON)
+      const toolCall = this._parseToolCall(rawContent)
+      if (toolCall) {
+        return { type: 'tool', ...toolCall }
+      }
+
+      return { type: 'text', content: rawContent }
     } catch (error) {
       console.error('[AI Engine] Error llamando a Ollama:', error.message)
-      // Fallback amigable si Ollama no está corriendo
-      return '¡Piii piii! Mi procesador principal no está conectado (Error de IA). ¿Encendiste a Ollama?'
+      return { type: 'text', content: '¡Piii piii! Mi procesador principal no está conectado (Error de IA). ¿Encendiste a Ollama?' }
     }
+  }
+
+  /**
+   * Intenta parsear el contenido como un tool call JSON.
+   * @returns {{ tool, params }} o null
+   */
+  _parseToolCall(content) {
+    try {
+      // Buscar un JSON dentro del texto por si la IA añade algo extra
+      const jsonMatch = content.match(/\{[\s\S]*"tool"[\s\S]*\}/)
+      if (!jsonMatch) return null
+      const parsed = JSON.parse(jsonMatch[0])
+      if (parsed.tool && parsed.params !== undefined) return parsed
+    } catch {}
+    return null
   }
 }
 

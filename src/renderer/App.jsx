@@ -43,7 +43,15 @@ export default function App() {
       // 3. Llamar al backend de Electron (que a su vez llama a Ollama/OpenAI)
       let responseText = ''
       if (window.bmo?.sendMessage) {
-        responseText = await window.bmo.sendMessage(history)
+        const aiResponse = await window.bmo.sendMessage(history)
+
+        // La respuesta puede ser { type: 'text', content } o { type: 'tool', result }
+        if (aiResponse && typeof aiResponse === 'object') {
+          responseText = aiResponse.type === 'tool' ? aiResponse.result : aiResponse.content
+        } else {
+          // Compatibilidad con respuestas legacy string
+          responseText = aiResponse || '[Sin respuesta]'
+        }
       } else {
         responseText = '[Modo Offline] No puedo conectar con mi cerebro principal.'
       }

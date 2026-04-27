@@ -2,6 +2,7 @@ import 'dotenv/config'
 import { app, BrowserWindow, ipcMain, screen } from 'electron'
 import { aiEngine } from './ai/engine.js'
 import { memoryManager } from './memory/manager.js'
+import { executeTool } from './tools/index.js'
 import { createRequire } from 'module'
 import { fileURLToPath } from 'url'
 import path from 'path'
@@ -68,21 +69,32 @@ app.whenReady().then(() => {
     return win ? win.getPosition() : [0, 0]
   })
 
-  // ── IPC: IA (Fase 3 & 4) ───────────────────────────
+  // ── IPC: IA (Fase 3, 4 & 5) ─────────────────────────
   ipcMain.handle('ai:message', async (_, history) => {
-    const response = await aiEngine.ask(history)
-    
-    // Guardar los últimos mensajes en la memoria persistente
+    const aiResponse = await aiEngine.ask(history)
     const lastUserMsg = history[history.length - 1]
-    const bmoMsg = { role: 'assistant', content: response }
-    memoryManager.addHistory([lastUserMsg, bmoMsg])
-    
-    return response
+
+    // ¿La IA quiere usar una herramienta?
+    if (aiResponse.type === 'tool') {
+      const toolResult = await executeTool(aiResponse.tool, aiResponse.params)
+      const bmoText = toolResult.result
+      memoryManager.addHistory([lastUserMsg, { role: 'assistant', content: bmoText }])
+      return { type: 'tool', toolName: aiResponse.tool, result: bmoText }
+    }
+
+    // Respuesta de texto normal
+    const bmoText = aiResponse.content
+    memoryManager.addHistory([lastUserMsg, { role: 'assistant', content: bmoText }])
+    return { type: 'text', content: bmoText }
+  })
+
+  // ── IPC: Tool manual (Fase 5) ─────────────────────
+  ipcMain.handle('tool:execute', async (_, toolName, params) => {
+    return await executeTool(toolName, params)
   })
 
   // ── IPC: Memoria ───────────────────────────────────
   ipcMain.handle('memory:getHistory', () => {
-    // Convertimos el formato de guardado al formato del frontend
     return memoryManager.getHistory().map(m => ({
       text: m.content,
       sender: m.role === 'user' ? 'user' : 'bmo'
