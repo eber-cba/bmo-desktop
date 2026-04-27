@@ -1,250 +1,448 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef } from 'react'
 
-// ── Paleta de colores de BMO ────────────────────────────────────────
-const COLORS = {
-  body: '#4ecdc4',
-  bodyShade: '#3ab5ac',
-  screen: '#c8f0e8',
-  screenBorder: '#2c9e8e',
-  eye: '#1a2c3d',
-  eyeShine: '#ffffff',
-  mouth: '#1a2c3d',
-  button1: '#e74c3c',
-  button2: '#f39c12',
-  button3: '#2ecc71',
-  outline: '#2c3e50',
+// ─── Paleta fiel a Adventure Time ───────────────────────────────────────────
+const C = {
+  bodyTeal:      '#3CB9A8',
+  bodyTealDark:  '#2A8A7C',
+  bodyTealLight: '#4DD9C8',
+  screenMint:    '#C8EDE8',
+  screenDark:    '#A0D4CE',
+  outline:       '#1A3A36',
+  eyeWhite:      '#FFFFFF',
+  eyePupil:      '#1A1A1A',
+  eyeShine:      '#FFFFFF',
+  mouthColor:    '#1A3A36',
+  btnRed:        '#E84040',
+  btnOrange:     '#F5A623',
+  btnGreen:      '#4CD964',
+  footTeal:      '#2E9A8B',
+  sideBtn:       '#E84040',
+  blush:         'rgba(255,120,120,0.35)',
+  screenGlow:    'rgba(72,220,200,0.15)',
+  star:          '#FFD700',
 }
-
-const W = 160
-const H = 180
 
 /**
- * Dibuja a BMO en el canvas 2D.
- * @param {CanvasRenderingContext2D} ctx
- * @param {number} blinkProgress - 0 = ojos abiertos, 1 = ojos cerrados
+ * Dibuja BMO fiel al diseño de Adventure Time con estados de ánimo animados.
+ * mood: 'idle' | 'thinking' | 'talking' | 'happy' | 'sleepy' | 'confused'
  */
-function drawBmo(ctx, blinkProgress = 0) {
-  ctx.clearRect(0, 0, W, H)
-
-  // Sombra debajo del cuerpo
-  ctx.save()
-  ctx.shadowColor = 'rgba(0,0,0,0.25)'
-  ctx.shadowBlur = 10
-  ctx.shadowOffsetY = 5
-
-  // Cuerpo
-  ctx.fillStyle = COLORS.body
-  ctx.beginPath()
-  ctx.roundRect(10, 8, 140, 158, [16, 16, 12, 12])
-  ctx.fill()
-  ctx.restore()
-
-  // Contorno del cuerpo
-  ctx.strokeStyle = COLORS.outline
-  ctx.lineWidth = 2.5
-  ctx.beginPath()
-  ctx.roundRect(10, 8, 140, 158, [16, 16, 12, 12])
-  ctx.stroke()
-
-  // Pantalla (borde)
-  ctx.fillStyle = COLORS.screenBorder
-  ctx.beginPath()
-  ctx.roundRect(24, 22, 112, 88, 8)
-  ctx.fill()
-
-  // Pantalla (interior)
-  ctx.fillStyle = COLORS.screen
-  ctx.beginPath()
-  ctx.roundRect(27, 25, 106, 82, 6)
-  ctx.fill()
-
-  // Ojos con parpadeo
-  const eyeOpenH = 12
-  const eyeH = eyeOpenH * (1 - blinkProgress)
-
-  // Ojo izquierdo
-  ctx.fillStyle = COLORS.eye
-  ctx.beginPath()
-  ctx.ellipse(62, 68, 10, Math.max(eyeH, 1), 0, 0, Math.PI * 2)
-  ctx.fill()
-  if (blinkProgress < 0.5) {
-    ctx.fillStyle = COLORS.eyeShine
-    ctx.beginPath()
-    ctx.ellipse(58, 64, 3, 3 * (1 - blinkProgress * 2), 0, 0, Math.PI * 2)
-    ctx.fill()
-  }
-
-  // Ojo derecho
-  ctx.fillStyle = COLORS.eye
-  ctx.beginPath()
-  ctx.ellipse(98, 68, 10, Math.max(eyeH, 1), 0, 0, Math.PI * 2)
-  ctx.fill()
-  if (blinkProgress < 0.5) {
-    ctx.fillStyle = COLORS.eyeShine
-    ctx.beginPath()
-    ctx.ellipse(94, 64, 3, 3 * (1 - blinkProgress * 2), 0, 0, Math.PI * 2)
-    ctx.fill()
-  }
-
-  // Boca
-  ctx.strokeStyle = COLORS.mouth
-  ctx.lineWidth = 2.5
-  ctx.lineCap = 'round'
-  ctx.beginPath()
-  ctx.arc(80, 90, 10, 0.1 * Math.PI, 0.9 * Math.PI)
-  ctx.stroke()
-
-  // Botón lateral (rojo)
-  ctx.fillStyle = COLORS.button1
-  ctx.beginPath()
-  ctx.ellipse(155, 80, 7, 10, 0, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.strokeStyle = COLORS.outline
-  ctx.lineWidth = 1.5
-  ctx.stroke()
-
-  // Botones frontales
-  const btnY = 122
-  const btnColors = [COLORS.button1, COLORS.button2, COLORS.button3]
-  const btnX = [52, 80, 108]
-  btnColors.forEach((color, i) => {
-    ctx.fillStyle = color
-    ctx.beginPath()
-    ctx.arc(btnX[i], btnY, 7, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.strokeStyle = COLORS.outline
-    ctx.lineWidth = 1.2
-    ctx.stroke()
-  })
-
-  // Patas
-  ctx.fillStyle = COLORS.bodyShade
-  ;[[28, 155, 30, 20], [102, 155, 30, 20]].forEach(([x, y, w, h]) => {
-    ctx.beginPath()
-    ctx.roundRect(x, y, w, h, [0, 0, 6, 6])
-    ctx.fill()
-    ctx.strokeStyle = COLORS.outline
-    ctx.lineWidth = 1.5
-    ctx.stroke()
-  })
-}
-
-export default function BmoCharacter({ onClick, bubbleText }) {
+export default function BmoCharacter({ onClick, bubbleText, mood = 'idle' }) {
   const canvasRef = useRef(null)
-  const dragRef = useRef({ isDragging: false, startX: 0, startY: 0, lastX: 0, lastY: 0 })
-  const animRef = useRef({ frameId: null, blinkTimer: 0, blinkProgress: 0, isBlinking: false })
+  const frameRef  = useRef(0)
+  const tickRef   = useRef(0)
 
-  // ── Verificar que el puente IPC está disponible ─────────────────
-  useEffect(() => {
-    if (!window.bmo) {
-      console.warn('[BMO Renderer] ⚠️ window.bmo no está disponible. El preload no cargó.')
-    } else {
-      console.log('[BMO Renderer] ✅ window.bmo disponible, drag habilitado')
-    }
-  }, [])
-
-  // ── Animación idle: parpadeo periódico ──────────────────────────
   useEffect(() => {
     const canvas = canvasRef.current
-    const ctx = canvas.getContext('2d')
-    let lastTime = performance.now()
+    const ctx    = canvas.getContext('2d')
+    let animId
 
-    const animate = (now) => {
-      const delta = now - lastTime
-      lastTime = now
-      const anim = animRef.current
+    const draw = () => {
+      tickRef.current++
+      const t = tickRef.current
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-      anim.blinkTimer += delta
-      if (!anim.isBlinking && anim.blinkTimer > 3000) {
-        anim.isBlinking = true
-        anim.blinkProgress = 0
-        anim.blinkTimer = 0
+      // ── Float animation (subtle up/down) ────────────────────────────────
+      const floatY = mood === 'happy'
+        ? Math.sin(t * 0.18) * 6
+        : Math.sin(t * 0.04) * 2.5
+
+      ctx.save()
+      ctx.translate(0, floatY)
+
+      // ── Shadow ──────────────────────────────────────────────────────────
+      ctx.save()
+      ctx.fillStyle = 'rgba(0,0,0,0.12)'
+      ctx.beginPath()
+      ctx.ellipse(100, 198 - floatY, 52, 9, 0, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.restore()
+
+      // ── Body ────────────────────────────────────────────────────────────
+      drawRoundRect(ctx, 18, 10, 164, 175, 22, C.bodyTeal, C.outline, 3.5)
+
+      // Body highlight (top left sheen)
+      ctx.save()
+      const sheen = ctx.createLinearGradient(18, 10, 80, 90)
+      sheen.addColorStop(0, 'rgba(255,255,255,0.22)')
+      sheen.addColorStop(1, 'rgba(255,255,255,0)')
+      ctx.fillStyle = sheen
+      drawRoundRectPath(ctx, 18, 10, 164, 175, 22)
+      ctx.fill()
+      ctx.restore()
+
+      // ── Screen ──────────────────────────────────────────────────────────
+      drawRoundRect(ctx, 32, 22, 136, 106, 12, C.screenMint, C.outline, 2.5)
+
+      // Screen inner glow
+      ctx.save()
+      ctx.fillStyle = C.screenGlow
+      drawRoundRectPath(ctx, 35, 25, 130, 100, 10)
+      ctx.fill()
+      ctx.restore()
+
+      // ── MOOD-BASED SCREEN CONTENT ────────────────────────────────────────
+      drawScreen(ctx, t, mood)
+
+      // ── Buttons row ─────────────────────────────────────────────────────
+      // Red button
+      drawCircleButton(ctx, 60, 148, 11, C.btnRed)
+      // Orange button
+      drawCircleButton(ctx, 100, 148, 11, C.btnOrange)
+      // Green button
+      drawCircleButton(ctx, 140, 148, 11, C.btnGreen)
+
+      // D-pad left side (2 small rectangles)
+      drawRoundRect(ctx, 22, 75, 6, 18, 3, C.bodyTealDark, C.outline, 1.5)
+      drawRoundRect(ctx, 22, 98, 6, 18, 3, C.bodyTealDark, C.outline, 1.5)
+
+      // Side button (right side, orange/red)
+      drawRoundRect(ctx, 172, 80, 10, 22, 4, C.sideBtn, C.outline, 2)
+
+      // ── Feet ────────────────────────────────────────────────────────────
+      drawRoundRect(ctx, 42, 178, 40, 18, 6, C.footTeal, C.outline, 2.5)
+      drawRoundRect(ctx, 118, 178, 40, 18, 6, C.footTeal, C.outline, 2.5)
+
+      // Blush (shows when happy or talking)
+      if (mood === 'happy' || mood === 'talking') {
+        ctx.save()
+        ctx.globalAlpha = mood === 'happy' ? 0.7 : 0.4
+        ctx.fillStyle = C.blush
+        ctx.beginPath(); ctx.ellipse(55, 90, 14, 9, -0.3, 0, Math.PI*2); ctx.fill()
+        ctx.beginPath(); ctx.ellipse(145, 90, 14, 9, 0.3, 0, Math.PI*2); ctx.fill()
+        ctx.restore()
       }
 
-      if (anim.isBlinking) {
-        anim.blinkProgress += delta / 80
-        if (anim.blinkProgress >= 2) {
-          anim.isBlinking = false
-          anim.blinkProgress = 0
-        }
-      }
+      ctx.restore() // end float
 
-      const blink = anim.isBlinking
-        ? anim.blinkProgress <= 1
-          ? anim.blinkProgress
-          : 2 - anim.blinkProgress
-        : 0
+      // ── Speech Bubble ───────────────────────────────────────────────────
+      if (bubbleText) drawBubble(ctx, bubbleText, canvas.width)
 
-      drawBmo(ctx, blink)
-      anim.frameId = requestAnimationFrame(animate)
+      // ── Happy sparkles ──────────────────────────────────────────────────
+      if (mood === 'happy') drawSparkles(ctx, t)
+
+      animId = requestAnimationFrame(draw)
     }
 
-    animRef.current.frameId = requestAnimationFrame(animate)
-    return () => cancelAnimationFrame(animRef.current.frameId)
-  }, [])
-
-  // ── Drag ────────────────────────────────────────────────────────
-  const onMouseDown = useCallback((e) => {
-    dragRef.current = { 
-      isDragging: true, 
-      startX: e.screenX, 
-      startY: e.screenY,
-      lastX: e.screenX, 
-      lastY: e.screenY 
-    }
-    if (canvasRef.current) canvasRef.current.style.cursor = 'grabbing'
-    e.preventDefault()
-  }, [])
-
-  const onMouseMove = useCallback((e) => {
-    const drag = dragRef.current
-    if (!drag.isDragging) return
-
-    const deltaX = e.screenX - drag.lastX
-    const deltaY = e.screenY - drag.lastY
-    drag.lastX = e.screenX
-    drag.lastY = e.screenY
-
-    // Usar IPC bridge si está disponible, fallback silencioso si no
-    if (window.bmo?.drag) {
-      window.bmo.drag({ deltaX, deltaY })
-    }
-  }, [])
-
-  const onMouseUp = useCallback((e) => {
-    const drag = dragRef.current
-    if (!drag.isDragging) return
-    
-    drag.isDragging = false
-    if (canvasRef.current) canvasRef.current.style.cursor = 'grab'
-    
-    // Detectar si fue click o drag
-    const moveDistance = Math.abs(e.screenX - drag.startX) + Math.abs(e.screenY - drag.startY)
-    if (moveDistance < 5 && onClick) {
-      onClick()
-    }
-  }, [onClick])
-
-  useEffect(() => {
-    window.addEventListener('mousemove', onMouseMove)
-    window.addEventListener('mouseup', onMouseUp)
-    return () => {
-      window.removeEventListener('mousemove', onMouseMove)
-      window.removeEventListener('mouseup', onMouseUp)
-    }
-  }, [onMouseMove, onMouseUp])
+    draw()
+    return () => cancelAnimationFrame(animId)
+  }, [mood, bubbleText])
 
   return (
-    <div className="bmo-wrapper">
-      {bubbleText && <div className="bmo-bubble">{bubbleText}</div>}
+    <div style={{ position: 'relative', display: 'inline-block', cursor: 'pointer' }}>
       <canvas
         ref={canvasRef}
-        width={W}
-        height={H}
-        onMouseDown={onMouseDown}
-        style={{ cursor: 'grab', display: 'block' }}
-        title="¡Hola! Soy BMO 👾 — arrastrame o haz click en mi"
+        width={200}
+        height={210}
+        onClick={onClick}
+        style={{ display: 'block' }}
       />
     </div>
   )
+}
+
+// ─── SCREEN RENDERER ─────────────────────────────────────────────────────────
+function drawScreen(ctx, t, mood) {
+  const cx = 100 // screen center x
+  const eyeLy = 68, eyeRy = 68
+  const eyeLx = 72, eyeRx = 128
+
+  if (mood === 'idle') {
+    const blink = (t % 180 < 6) // blink every ~3s
+    drawEye(ctx, eyeLx, eyeLy, 15, blink)
+    drawEye(ctx, eyeRx, eyeRy, 15, blink)
+    // Pupils look slightly left/right over time
+    const lookX = Math.sin(t * 0.02) * 3
+    drawPupil(ctx, eyeLx + lookX, eyeLy, 7)
+    drawPupil(ctx, eyeRx + lookX, eyeRy, 7)
+    drawSmile(ctx, cx, 94, 18, false)
+  }
+
+  else if (mood === 'thinking') {
+    // Spiral/spinning pupils
+    const angle = t * 0.08
+    drawEye(ctx, eyeLx, eyeLy, 15, false)
+    drawEye(ctx, eyeRx, eyeRy, 15, false)
+    drawPupilSpiral(ctx, eyeLx, eyeLy, 7, angle)
+    drawPupilSpiral(ctx, eyeRx, eyeRy, 7, angle + 0.5)
+    // "..." on lower screen
+    ctx.fillStyle = C.outline
+    ctx.font = 'bold 18px Patrick Hand, sans-serif'
+    ctx.textAlign = 'center'
+    const dots = '.'.repeat((Math.floor(t / 20) % 3) + 1)
+    ctx.fillText(dots, cx, 104)
+  }
+
+  else if (mood === 'talking') {
+    const blink = (t % 120 < 5)
+    drawEye(ctx, eyeLx, eyeLy, 15, blink)
+    drawEye(ctx, eyeRx, eyeRy, 15, blink)
+    drawPupil(ctx, eyeLx, eyeLy, 7)
+    drawPupil(ctx, eyeRx, eyeRy, 7)
+    // Animated mouth (open/close)
+    const open = (Math.sin(t * 0.25) > 0)
+    drawSmile(ctx, cx, 94, 18, open)
+  }
+
+  else if (mood === 'happy') {
+    // Star eyes!
+    drawEye(ctx, eyeLx, eyeLy, 16, false)
+    drawEye(ctx, eyeRx, eyeRy, 16, false)
+    drawStarEye(ctx, eyeLx, eyeLy, 10, t)
+    drawStarEye(ctx, eyeRx, eyeRy, 10, t)
+    // Big smile
+    drawSmile(ctx, cx, 97, 24, false, true)
+  }
+
+  else if (mood === 'sleepy') {
+    // Half-closed eyes
+    drawEyeSleepy(ctx, eyeLx, eyeLy, 15)
+    drawEyeSleepy(ctx, eyeRx, eyeRy, 15)
+    drawPupil(ctx, eyeLx, eyeLy + 4, 5)
+    drawPupil(ctx, eyeRx, eyeRy + 4, 5)
+    drawSmile(ctx, cx, 96, 12, false)
+    // Zzz
+    ctx.save()
+    ctx.fillStyle = '#A0B0FF'
+    ctx.font = `bold ${14 + Math.sin(t * 0.05) * 2}px Bangers, sans-serif`
+    ctx.textAlign = 'center'
+    ctx.fillText('z', 148, 42 - Math.sin(t * 0.04) * 4)
+    ctx.font = `bold ${10 + Math.sin(t * 0.05) * 1}px Bangers, sans-serif`
+    ctx.fillText('z', 158, 32 - Math.sin(t * 0.04) * 3)
+    ctx.restore()
+  }
+
+  else if (mood === 'confused') {
+    // One eye bigger than the other
+    drawEye(ctx, eyeLx - 3, eyeLy, 18, false)
+    drawEye(ctx, eyeRx + 3, eyeRy, 12, false)
+    drawPupil(ctx, eyeLx - 3, eyeLy, 8)
+    drawPupil(ctx, eyeRx + 3, eyeRy, 5)
+    // Wiggly mouth
+    drawWigglyMouth(ctx, cx, 96, t)
+    // ? mark
+    ctx.fillStyle = C.outline
+    ctx.font = 'bold 14px Bangers, sans-serif'
+    ctx.textAlign = 'center'
+    ctx.fillText('?', 148, 42)
+  }
+}
+
+// ─── DRAWING HELPERS ─────────────────────────────────────────────────────────
+function drawEye(ctx, x, y, r, blink) {
+  ctx.save()
+  ctx.fillStyle = C.eyeWhite
+  ctx.strokeStyle = C.outline
+  ctx.lineWidth = 2
+  if (blink) {
+    ctx.beginPath()
+    ctx.ellipse(x, y, r, r * 0.15, 0, 0, Math.PI * 2)
+    ctx.fill(); ctx.stroke()
+  } else {
+    ctx.beginPath()
+    ctx.arc(x, y, r, 0, Math.PI * 2)
+    ctx.fill(); ctx.stroke()
+  }
+  ctx.restore()
+}
+
+function drawPupil(ctx, x, y, r) {
+  // Pupil
+  ctx.save()
+  ctx.fillStyle = C.eyePupil
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill()
+  // Shine
+  ctx.fillStyle = C.eyeShine
+  ctx.beginPath(); ctx.arc(x - r * 0.35, y - r * 0.35, r * 0.32, 0, Math.PI * 2); ctx.fill()
+  ctx.restore()
+}
+
+function drawPupilSpiral(ctx, x, y, r, angle) {
+  const px = x + Math.cos(angle) * 4
+  const py = y + Math.sin(angle) * 4
+  drawPupil(ctx, px, py, r)
+}
+
+function drawEyeSleepy(ctx, x, y, r) {
+  ctx.save()
+  ctx.fillStyle = C.eyeWhite
+  ctx.strokeStyle = C.outline
+  ctx.lineWidth = 2
+  // Draw only bottom half circle (half-open)
+  ctx.beginPath()
+  ctx.arc(x, y, r, 0, Math.PI)
+  ctx.closePath()
+  ctx.fill(); ctx.stroke()
+  // Top eyelid line
+  ctx.beginPath(); ctx.moveTo(x - r, y); ctx.lineTo(x + r, y); ctx.stroke()
+  ctx.restore()
+}
+
+function drawStarEye(ctx, x, y, r, t) {
+  ctx.save()
+  ctx.fillStyle = C.star
+  ctx.strokeStyle = C.outline
+  ctx.lineWidth = 1.5
+  const spikes = 5
+  const outerR = r
+  const innerR = r * 0.45
+  const rotation = t * 0.04
+  ctx.beginPath()
+  for (let i = 0; i < spikes * 2; i++) {
+    const rad = (i * Math.PI) / spikes + rotation
+    const rr = i % 2 === 0 ? outerR : innerR
+    ctx.lineTo(x + Math.cos(rad) * rr, y + Math.sin(rad) * rr)
+  }
+  ctx.closePath()
+  ctx.fill(); ctx.stroke()
+  ctx.restore()
+}
+
+function drawSmile(ctx, cx, y, width, open, big = false) {
+  ctx.save()
+  ctx.strokeStyle = C.mouthColor
+  ctx.lineWidth = 2.5
+  ctx.lineCap = 'round'
+  if (open) {
+    // Open mouth (oval)
+    ctx.fillStyle = '#1A1A1A'
+    ctx.beginPath()
+    ctx.ellipse(cx, y + 2, width * 0.5, big ? 8 : 5, 0, 0, Math.PI * 2)
+    ctx.fill()
+  } else {
+    ctx.beginPath()
+    ctx.arc(cx, y - (big ? 14 : 8), big ? 22 : 16, 0.25 * Math.PI, 0.75 * Math.PI)
+    ctx.stroke()
+  }
+  ctx.restore()
+}
+
+function drawWigglyMouth(ctx, cx, y, t) {
+  ctx.save()
+  ctx.strokeStyle = C.mouthColor
+  ctx.lineWidth = 2.5
+  ctx.lineCap = 'round'
+  ctx.beginPath()
+  ctx.moveTo(cx - 14, y)
+  for (let x = -14; x <= 14; x += 2) {
+    const wy = y + Math.sin((x + t * 0.5) * 0.6) * 3
+    ctx.lineTo(cx + x, wy)
+  }
+  ctx.stroke()
+  ctx.restore()
+}
+
+function drawCircleButton(ctx, x, y, r, color) {
+  // Shadow
+  ctx.save()
+  ctx.fillStyle = 'rgba(0,0,0,0.2)'
+  ctx.beginPath(); ctx.arc(x + 1.5, y + 2, r, 0, Math.PI * 2); ctx.fill()
+  // Button
+  ctx.fillStyle = color
+  ctx.strokeStyle = C.outline
+  ctx.lineWidth = 2
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2)
+  ctx.fill(); ctx.stroke()
+  // Shine
+  ctx.fillStyle = 'rgba(255,255,255,0.3)'
+  ctx.beginPath(); ctx.arc(x - 3, y - 3, r * 0.4, 0, Math.PI * 2); ctx.fill()
+  ctx.restore()
+}
+
+function drawBubble(ctx, text, canvasW) {
+  const words = text.split(' ')
+  const lines = []
+  let line = ''
+  ctx.font = '13px Patrick Hand, sans-serif'
+  const maxW = 160
+  for (const w of words) {
+    const test = line ? `${line} ${w}` : w
+    if (ctx.measureText(test).width > maxW) { lines.push(line); line = w }
+    else line = test
+  }
+  if (line) lines.push(line)
+  const pad = 10
+  const lineH = 18
+  const bw = maxW + pad * 2
+  const bh = lines.length * lineH + pad * 2
+  const bx = canvasW / 2 - bw / 2
+  const by = -bh - 16
+
+  ctx.save()
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.15)'
+  drawRoundRectPath(ctx, bx + 3, by + 3, bw, bh, 12)
+  ctx.fill()
+  // Bubble
+  ctx.fillStyle = '#FFFDE7'
+  ctx.strokeStyle = C.outline
+  ctx.lineWidth = 2.5
+  drawRoundRectPath(ctx, bx, by, bw, bh, 12)
+  ctx.fill(); ctx.stroke()
+  // Tail
+  ctx.beginPath()
+  ctx.moveTo(canvasW / 2 - 8, by + bh)
+  ctx.lineTo(canvasW / 2, by + bh + 16)
+  ctx.lineTo(canvasW / 2 + 8, by + bh)
+  ctx.fillStyle = '#FFFDE7'
+  ctx.fill()
+  ctx.strokeStyle = C.outline
+  ctx.lineWidth = 2
+  ctx.stroke()
+  // Text
+  ctx.fillStyle = '#2C3E50'
+  ctx.font = '13px Patrick Hand, sans-serif'
+  ctx.textAlign = 'center'
+  lines.forEach((l, i) => ctx.fillText(l, canvasW / 2, by + pad + 14 + i * lineH))
+  ctx.restore()
+}
+
+function drawSparkles(ctx, t) {
+  const positions = [[30, 20], [170, 15], [15, 130], [185, 100], [95, 5]]
+  ctx.save()
+  positions.forEach(([x, y], i) => {
+    const alpha = Math.abs(Math.sin(t * 0.1 + i))
+    const size = 6 + Math.sin(t * 0.15 + i) * 2
+    ctx.globalAlpha = alpha * 0.9
+    ctx.fillStyle = C.star
+    ctx.strokeStyle = C.outline
+    ctx.lineWidth = 1
+    // 4-point star
+    ctx.beginPath()
+    ctx.moveTo(x, y - size)
+    ctx.lineTo(x + size * 0.3, y - size * 0.3)
+    ctx.lineTo(x + size, y)
+    ctx.lineTo(x + size * 0.3, y + size * 0.3)
+    ctx.lineTo(x, y + size)
+    ctx.lineTo(x - size * 0.3, y + size * 0.3)
+    ctx.lineTo(x - size, y)
+    ctx.lineTo(x - size * 0.3, y - size * 0.3)
+    ctx.closePath()
+    ctx.fill(); ctx.stroke()
+  })
+  ctx.restore()
+}
+
+// ─── UTILITY ─────────────────────────────────────────────────────────────────
+function drawRoundRect(ctx, x, y, w, h, r, fill, stroke, lw) {
+  ctx.save()
+  ctx.fillStyle = fill
+  ctx.strokeStyle = stroke
+  ctx.lineWidth = lw
+  drawRoundRectPath(ctx, x, y, w, h, r)
+  ctx.fill(); ctx.stroke()
+  ctx.restore()
+}
+
+function drawRoundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.lineTo(x + w - r, y)
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r)
+  ctx.lineTo(x + w, y + h - r)
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
+  ctx.lineTo(x + r, y + h)
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r)
+  ctx.lineTo(x, y + r)
+  ctx.quadraticCurveTo(x, y, x + r, y)
+  ctx.closePath()
 }
