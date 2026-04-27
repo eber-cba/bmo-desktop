@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import BmoCharacter from './components/BmoCharacter.jsx'
 import ChatPanel from './components/ChatPanel.jsx'
-import { getHardcodedResponse } from './utils/chatLogic.js'
 import './styles.css'
 
 export default function App() {
@@ -11,21 +10,40 @@ export default function App() {
   ])
   const [bmoBubbleText, setBmoBubbleText] = useState('')
 
+  const [isTyping, setIsTyping] = useState(false)
+
   const toggleChat = () => setIsChatOpen(!isChatOpen)
 
-  const handleSendMessage = (text) => {
+  const handleSendMessage = async (text) => {
     // 1. Agregar mensaje del usuario
-    const newMessages = [...messages, { text, sender: 'user' }]
+    const userMsg = { text, sender: 'user' }
+    const newMessages = [...messages, userMsg]
     setMessages(newMessages)
+    setIsTyping(true)
 
-    // 2. Generar respuesta de BMO (simulada)
-    setTimeout(() => {
-      const responseText = getHardcodedResponse(text)
+    try {
+      // 2. Formatear historial para la IA (rol: 'user' | 'assistant')
+      const history = newMessages.map(m => ({
+        role: m.sender === 'user' ? 'user' : 'assistant',
+        content: m.text
+      }))
+
+      // 3. Llamar al backend de Electron (que a su vez llama a Ollama/OpenAI)
+      let responseText = ''
+      if (window.bmo?.sendMessage) {
+        responseText = await window.bmo.sendMessage(history)
+      } else {
+        responseText = '[Modo Offline] No puedo conectar con mi cerebro principal.'
+      }
+
       setMessages([...newMessages, { text: responseText, sender: 'bmo' }])
-      
-      // Mostrar en la burbuja sobre BMO por 3 segundos
       setBmoBubbleText(responseText)
-    }, 500)
+    } catch (err) {
+      console.error(err)
+      setMessages([...newMessages, { text: '¡Uy! Me mareé. Error de conexión.', sender: 'bmo' }])
+    } finally {
+      setIsTyping(false)
+    }
   }
 
   // Ocultar burbuja automáticamente
@@ -60,6 +78,7 @@ export default function App() {
           messages={messages}
           onSendMessage={handleSendMessage}
         />
+        {isTyping && <div style={{ position: 'absolute', bottom: '15px', right: '350px', fontSize: '12px', color: '#666', background: 'white', padding: '4px 8px', borderRadius: '10px' }}>BMO está pensando...</div>}
       </div>
     </div>
   )

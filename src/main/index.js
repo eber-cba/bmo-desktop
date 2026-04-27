@@ -1,4 +1,6 @@
+import 'dotenv/config'
 import { app, BrowserWindow, ipcMain, screen } from 'electron'
+import { aiEngine } from './ai/engine.js'
 import { createRequire } from 'module'
 import { fileURLToPath } from 'url'
 import path from 'path'
@@ -59,6 +61,11 @@ app.whenReady().then(() => {
   // ── IPC: Posición ──────────────────────────────────
   ipcMain.handle('window:getPosition', () => {
     return win ? win.getPosition() : [0, 0]
+  })
+
+  // ── IPC: IA (Fase 3) ───────────────────────────────
+  ipcMain.handle('ai:message', async (_, history) => {
+    return await aiEngine.ask(history)
   })
 
   console.log('[BMO Main] ✅ App lista')
