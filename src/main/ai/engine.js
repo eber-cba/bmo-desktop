@@ -1,4 +1,5 @@
 import { BMO_SYSTEM_PROMPT } from './prompts/bmo.js'
+import { memoryManager } from '../memory/manager.js'
 
 /**
  * Motor de IA principal.
@@ -25,9 +26,21 @@ export class AIEngine {
   }
 
   async _askOllama(history) {
-    // Añadir el system prompt al inicio del contexto
+    // Obtener hechos recordados para personalizar la respuesta
+    const facts = memoryManager.getFacts()
+    const factsStr = Object.entries(facts)
+      .map(([k, v]) => `- ${k}: ${v}`)
+      .join('\n')
+
+    const systemPromptWithMemory = `
+${BMO_SYSTEM_PROMPT}
+
+COSAS QUE RECUERDAS SOBRE EL USUARIO:
+${factsStr || 'Aún no sabes mucho sobre el usuario. ¡Pregúntale su nombre!'}
+`
+
     const messages = [
-      { role: 'system', content: BMO_SYSTEM_PROMPT },
+      { role: 'system', content: systemPromptWithMemory },
       ...history
     ]
 

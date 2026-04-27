@@ -5,12 +5,24 @@ import './styles.css'
 
 export default function App() {
   const [isChatOpen, setIsChatOpen] = useState(false)
-  const [messages, setMessages] = useState([
-    { text: '¡Hola! Escribe algo para hablar conmigo.', sender: 'bmo' }
-  ])
+  const [messages, setMessages] = useState([])
   const [bmoBubbleText, setBmoBubbleText] = useState('')
-
   const [isTyping, setIsTyping] = useState(false)
+
+  // Cargar historial al iniciar (Fase 4)
+  useEffect(() => {
+    async function loadHistory() {
+      if (window.bmo?.getHistory) {
+        const history = await window.bmo.getHistory()
+        if (history && history.length > 0) {
+          setMessages(history)
+        } else {
+          setMessages([{ text: '¡Hola! Soy BMO. ¿En qué puedo ayudarte hoy?', sender: 'bmo' }])
+        }
+      }
+    }
+    loadHistory()
+  }, [])
 
   const toggleChat = () => setIsChatOpen(!isChatOpen)
 
@@ -77,8 +89,8 @@ export default function App() {
           onClose={() => setIsChatOpen(false)}
           messages={messages}
           onSendMessage={handleSendMessage}
+          isTyping={isTyping}
         />
-        {isTyping && <div style={{ position: 'absolute', bottom: '15px', right: '350px', fontSize: '12px', color: '#666', background: 'white', padding: '4px 8px', borderRadius: '10px' }}>BMO está pensando...</div>}
       </div>
     </div>
   )

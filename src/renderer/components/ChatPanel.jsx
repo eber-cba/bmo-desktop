@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
 
-export default function ChatPanel({ isOpen, onClose, onSendMessage, messages }) {
+export default function ChatPanel({ isOpen, onClose, onSendMessage, messages, isTyping }) {
   const [inputValue, setInputValue] = useState('')
   const messagesEndRef = useRef(null)
 
-  // Auto-scroll al final cuando hay mensajes nuevos
+  // Auto-scroll al final cuando hay mensajes nuevos o BMO está escribiendo
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [messages, isTyping])
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -29,6 +29,11 @@ export default function ChatPanel({ isOpen, onClose, onSendMessage, messages }) 
             {msg.text}
           </div>
         ))}
+        {isTyping && (
+          <div className="msg bmo typing">
+            BMO está escribiendo<span>.</span><span>.</span><span>.</span>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 

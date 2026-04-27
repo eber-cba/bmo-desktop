@@ -11,8 +11,9 @@ contextBridge.exposeInMainWorld('bmo', {
   // Obtener posición actual de la ventana
   getPosition: () => ipcRenderer.invoke('window:getPosition'),
 
-  // Fase 3: IA
+  // Fase 3 & 4: IA y Memoria
   sendMessage: (msg) => ipcRenderer.invoke('ai:message', msg),
+  getHistory: () => ipcRenderer.invoke('memory:getHistory'),
 
   // Fase 5: executeTool: (name, params) => ipcRenderer.invoke('tool:execute', name, params),
 })

@@ -1,27 +1,35 @@
-name: CI
+name: CI - BMO Desktop Pet
 
 on:
   push:
-    branches: [main, develop]
+    branches: [master, main, develop]
   pull_request:
-    branches: [main]
+    branches: [master, main]
 
 jobs:
   test:
+    name: 🧪 Tests & Lint
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js 20
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: 📦 Instalar dependencias
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
+      - name: 🧹 Lint
+        run: npm run lint --if-present
 
-      - name: Run tests
+      - name: ✅ Ejecutar tests unitarios
         run: npm test
+
+      - name: 📊 Reporte de resultados
+        if: always()
+        run: echo "Tests completados. Ver resultados arriba."
