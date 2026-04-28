@@ -78,6 +78,61 @@ export const tools = {
         result: `🕐 Son las ${now.toLocaleTimeString('es-AR')} del ${now.toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.`
       }
     }
+  },
+
+  // ── Fase 8: Dev Mode Tools ──────────────────────────
+
+  /**
+   * Ejecuta un comando en la terminal.
+   */
+  run_command: {
+    name: 'run_command',
+    description: 'Ejecuta un comando de terminal',
+    async handler({ command }) {
+      if (!command) return { success: false, result: 'Falta el comando a ejecutar.' }
+      try {
+        const { stdout, stderr } = await execAsync(command)
+        return { success: true, result: `Salida de consola:\n${stdout}\n${stderr ? 'Errores:\n' + stderr : ''}` }
+      } catch (err) {
+        return { success: false, result: `Falló la ejecución de "${command}": ${err.message}` }
+      }
+    }
+  },
+
+  /**
+   * Lee el contenido de un archivo.
+   */
+  read_file: {
+    name: 'read_file',
+    description: 'Lee el contenido de un archivo en el sistema',
+    async handler({ filepath }) {
+      if (!filepath) return { success: false, result: 'Necesito la ruta del archivo.' }
+      try {
+        const content = fs.readFileSync(filepath, 'utf-8')
+        // Truncar si es muy largo
+        const truncated = content.length > 3000 ? content.slice(0, 3000) + '...[truncado]' : content
+        return { success: true, result: `Contenido de ${filepath}:\n${truncated}` }
+      } catch (err) {
+        return { success: false, result: `No pude leer el archivo: ${err.message}` }
+      }
+    }
+  },
+
+  /**
+   * Lista los archivos de un directorio.
+   */
+  list_dir: {
+    name: 'list_dir',
+    description: 'Lista los archivos en una carpeta',
+    async handler({ dirpath }) {
+      if (!dirpath) return { success: false, result: 'Necesito la ruta de la carpeta.' }
+      try {
+        const files = fs.readdirSync(dirpath)
+        return { success: true, result: `Archivos en ${dirpath}:\n${files.join(', ')}` }
+      } catch (err) {
+        return { success: false, result: `No pude leer la carpeta: ${err.message}` }
+      }
+    }
   }
 }
 
