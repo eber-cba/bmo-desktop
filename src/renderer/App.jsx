@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import BmoCharacter from './components/BmoCharacter.jsx'
+import Bmo3D from './components/Bmo3D.jsx'
 import ChatPanel from './components/ChatPanel.jsx'
 import RadialMenu from './components/RadialMenu.jsx'
 import Toast from './components/Toast.jsx'
@@ -78,58 +78,44 @@ export default function App() {
 
   // ── Auto-ocultar burbuja ───────────────────────────────────────────────────
   useEffect(() => {
-    if (!bmoBubbleText) return
-    const t = setTimeout(() => setBmoBubbleText(''), 5000)
-    return () => clearTimeout(t)
+    if (bmoBubbleText) {
+      const timer = setTimeout(() => setBmoBubbleText(''), 4000)
+      return () => clearTimeout(timer)
+    }
   }, [bmoBubbleText])
-
-  // ── Toggle chat ────────────────────────────────────────────────────────────
-  const handleBmoClick = () => {
-    setIsChatOpen(prev => !prev)
-    celebrate()
-  }
 
   // ── Enviar mensaje ─────────────────────────────────────────────────────────
   const handleSendMessage = async (text) => {
-    const userMsg = { text, sender: 'user' }
-    const newMessages = [...messages, userMsg]
-    setMessages(newMessages)
+    if (!text.trim()) return
+
+    const newMsgs = [...messages, { text, sender: 'user' }]
+    setMessages(newMsgs)
     setIsTyping(true)
     startThinking()
 
     try {
-      const history = newMessages.map(m => ({
+      const bmoHistory = newMsgs.map(m => ({
         role: m.sender === 'user' ? 'user' : 'assistant',
         content: m.text
       }))
 
-      let responseText = ''
-      let isTool = false
-
-      if (window.bmo?.sendMessage) {
-        const aiResponse = await window.bmo.sendMessage(history)
-        if (aiResponse && typeof aiResponse === 'object') {
-          isTool = aiResponse.type === 'tool'
-          responseText = isTool ? aiResponse.result : aiResponse.content
-        } else {
-          responseText = aiResponse || '[Sin respuesta]'
-        }
-      } else {
-        responseText = '[Modo Offline] No puedo conectar con mi cerebro. 🔋'
-      }
-
-      const bmoMsg = { text: responseText, sender: 'bmo', isTool }
-      setMessages([...newMessages, bmoMsg])
-      setBmoBubbleText(responseText.slice(0, 80) + (responseText.length > 80 ? '...' : ''))
-      startTalking(Math.min(responseText.length * 40, 6000))
-      if (isTool) celebrate()
-
-    } catch (err) {
-      console.error(err)
-      setMessages([...newMessages, { text: '¡Uy! Me mareé. Error de conexión. 😵', sender: 'bmo' }])
-      showError()
-    } finally {
+      const response = await window.bmo.ask(bmoHistory)
+      
       setIsTyping(false)
+
+      if (response.type === 'tool') {
+        setMessages(prev => [...prev, { text: response.result, sender: 'tool', toolName: response.toolName }])
+        setBmoBubbleText('¡Ejecutando proceso! ⚙️')
+        celebrate()
+      } else {
+        setMessages(prev => [...prev, { text: response.content, sender: 'bmo' }])
+        setBmoBubbleText(response.content)
+        startTalking()
+      }
+    } catch (err) {
+      setIsTyping(false)
+      showError()
+      setBmoBubbleText('¡Piii piii! Error de sistema ⚡')
     }
   }
 
@@ -153,10 +139,13 @@ export default function App() {
           onSendMessage={handleSendMessage}
           isTyping={isTyping}
         />
-        <BmoCharacter
-          onClick={handleBmoClick}
-          bubbleText={bmoBubbleText}
+        <Bmo3D
           mood={mood}
+          onClick={() => {
+            celebrate()
+            setBmoBubbleText('¡Hahah! ¡Eso hace cosquillas! ✨')
+          }}
+          bubbleText={bmoBubbleText}
         />
       </div>
     </div>
