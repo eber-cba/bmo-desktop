@@ -56,6 +56,9 @@ html, body, #root {
   gap: 12px;
   -webkit-app-region: drag;
 }
+.bmo-wrapper.is-menu-open {
+  -webkit-app-region: no-drag !important;
+}
 
 .bmo-wrapper canvas {
   -webkit-app-region: no-drag;
@@ -396,6 +399,7 @@ html, body, #root {
   position: fixed;
   top: 0; left: 0; width: 100vw; height: 100vh;
   z-index: 999;
+  -webkit-app-region: no-drag;
   /* background: rgba(0,0,0,0.1); */
 }
 
@@ -418,14 +422,15 @@ html, body, #root {
   font-size: 20px;
   cursor: pointer;
   pointer-events: auto;
-  transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+  -webkit-app-region: no-drag;
+  transition: box-shadow 0.15s, background 0.15s;
   animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
 .radial-btn:hover {
   background: var(--bmo-teal-light);
-  transform: scale(1.1) translate(calc(-50%), calc(-50%)) !important;
   box-shadow: 3px 3px 0 var(--dark-outline);
+  scale: 1.1;
 }
 
 .radial-center {
@@ -439,15 +444,16 @@ html, body, #root {
   font-size: 14px; font-weight: bold;
   cursor: pointer;
   pointer-events: auto;
+  -webkit-app-region: no-drag;
   transform: translate(-50%, -50%);
   box-shadow: 1.5px 1.5px 0 var(--dark-outline);
   animation: popIn 0.2s ease-out forwards;
 }
-.radial-center:hover { transform: translate(-50%, -50%) scale(1.1); }
+.radial-center:hover { scale: 1.1; }
 
 @keyframes popIn {
-  from { opacity: 0; transform: scale(0) translate(-50%, -50%); }
-  to { opacity: 1; }
+  from { opacity: 0; scale: 0; }
+  to { opacity: 1; scale: 1; }
 }
 
 /* ── Toast Notifications ── */

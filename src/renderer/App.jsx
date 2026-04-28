@@ -145,7 +145,7 @@ export default function App() {
         actions={radialActions} 
       />
 
-      <div className="bmo-wrapper">
+      <div className={`bmo-wrapper ${radialMenu.isOpen ? 'is-menu-open' : ''}`}>
         <ChatPanel
           isOpen={isChatOpen}
           onClose={() => setIsChatOpen(false)}
