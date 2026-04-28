@@ -17,6 +17,15 @@ export class AIEngine {
    * @param {Array} history - Historial de mensajes [{ role: 'user'|'assistant', content: string }]
    * @returns {Promise<string>} La respuesta de BMO
    */
+  async ping() {
+    if (this.provider === 'ollama') {
+      const res = await fetch(`${this.ollamaUrl}/api/tags`)
+      if (!res.ok) throw new Error('No ok')
+      return true
+    }
+    return true
+  }
+
   async ask(history) {
     if (this.provider === 'ollama') {
       return this._askOllama(history)
@@ -57,6 +66,12 @@ ${factsStr || 'Aún no sabes mucho sobre el usuario. ¡Pregúntale su nombre!'}
 
       if (!response.ok) {
         throw new Error(`Ollama error: ${response.statusText}`)
+      }
+
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text()
+        throw new Error(`Ollama no devolvió JSON. Respuesta: ${text.slice(0, 50)}...`)
       }
 
       const data = await response.json()

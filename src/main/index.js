@@ -17,8 +17,8 @@ let win = null
 
 function createWindow() {
   win = new BrowserWindow({
-    width: 500,
-    height: 450,
+    width: 600,
+    height: 580,
     transparent: true,
     backgroundColor: '#00000000',
     frame: false,
@@ -35,15 +35,15 @@ function createWindow() {
 
   if (process.env.NODE_ENV === 'development') {
     win.loadURL('http://localhost:5174')
-    // 👇 Descomentá esta línea si querés inspeccionar el renderer
+    // DevTools comentado para no ensuciar la terminal con errores internos de Chromium
     // win.webContents.openDevTools({ mode: 'detach' })
   } else {
     win.loadFile(path.join(__dirname, '../../dist/renderer/index.html'))
   }
 
-  // Posición inicial: esquina inferior derecha
+  // Posición inicial: esquina inferior derecha, asegurando que se vea todo el BMO y el chat
   const { width, height } = screen.getPrimaryDisplay().workAreaSize
-  win.setPosition(width - 200, height - 220)
+  win.setPosition(width - 600, height - 580)
 
   win.on('closed', () => { win = null })
   console.log('[BMO Window] ✅ Ventana creada')
@@ -102,9 +102,9 @@ app.whenReady().then(() => {
   })
 
   // ── Chequeo de Salud (IA) ─────────────────────────
-  aiEngine.ask([{ role: 'user', content: 'Ping' }])
+  aiEngine.ping()
     .then(() => console.log('[BMO AI] 🧠 Cerebro conectado y listo (Ollama)'))
-    .catch(err => console.error('[BMO AI] ❌ Error de conexión:', err.message))
+    .catch(err => console.error('[BMO AI] ❌ Error de conexión con Ollama. ¿Está corriendo en el puerto 11434?'))
 
   console.log('[BMO Main] ✅ App lista')
 })
