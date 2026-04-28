@@ -1,5 +1,5 @@
 import 'dotenv/config'
-import { app, BrowserWindow, ipcMain, screen } from 'electron'
+import { app, BrowserWindow, ipcMain, screen, clipboard } from 'electron'
 import { aiEngine } from './ai/engine.js'
 import { memoryManager } from './memory/manager.js'
 import { executeTool } from './tools/index.js'
@@ -69,10 +69,22 @@ app.whenReady().then(() => {
     return win ? win.getPosition() : [0, 0]
   })
 
-  // ── IPC: IA (Fase 3, 4 & 5) ─────────────────────────
+  // ── IPC: IA (Fase 3, 4, 5 & 7) ─────────────────────────
   ipcMain.handle('ai:message', async (_, history) => {
-    const aiResponse = await aiEngine.ask(history)
     const lastUserMsg = history[history.length - 1]
+    const historyForAI = [...history]
+
+    // Fase 7: Context Awareness (Clipboard Watcher)
+    const clipText = clipboard.readText().trim()
+    if (clipText) {
+      const truncatedClip = clipText.length > 2000 ? clipText.slice(0, 2000) + '...[truncado]' : clipText
+      historyForAI[historyForAI.length - 1] = {
+        role: 'user',
+        content: `${lastUserMsg.content}\n\n[INFO DE SISTEMA: El usuario tiene copiado en su portapapeles este texto: "${truncatedClip}". Usalo SOLO si el usuario te pide que le resumas, expliques o uses lo que copió, de lo contrario ignoralo completamente].`
+      }
+    }
+
+    const aiResponse = await aiEngine.ask(historyForAI)
 
     // ¿La IA quiere usar una herramienta?
     if (aiResponse.type === 'tool') {
