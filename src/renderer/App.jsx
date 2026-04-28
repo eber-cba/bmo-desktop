@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import BmoCharacter from './components/BmoCharacter.jsx'
 import ChatPanel from './components/ChatPanel.jsx'
+import RadialMenu from './components/RadialMenu.jsx'
+import Toast from './components/Toast.jsx'
 import { useBmoMood } from './hooks/useBmoMood.js'
 import './styles.css'
 
@@ -11,6 +13,18 @@ export default function App() {
   const [isTyping, setIsTyping]       = useState(false)
   const { mood, startThinking, startTalking, celebrate, showError } = useBmoMood()
 
+  const [radialMenu, setRadialMenu] = useState({ isOpen: false, x: 0, y: 0 })
+  const [toast, setToast] = useState({ isVisible: false, message: '' })
+
+  const showToast = (message) => setToast({ isVisible: true, message })
+
+  const radialActions = [
+    { label: 'Chat', icon: '💬', onClick: () => setIsChatOpen(prev => !prev) },
+    { label: 'YouTube', icon: '🎵', onClick: () => { window.bmo?.executeTool('open_url', { url: 'https://youtube.com' }); showToast('Abriendo YouTube') } },
+    { label: 'Calculadora', icon: '🧮', onClick: () => { window.bmo?.executeTool('open_app', { app_name: 'calc' }); showToast('Abriendo Calculadora') } },
+    { label: 'Cerrar App', icon: '❌', onClick: () => window.close() }
+  ]
+
   // ── Drag del personaje ─────────────────────────────────────────────────────
   useEffect(() => {
     let dragging = false
@@ -18,6 +32,11 @@ export default function App() {
 
     const onMouseDown = (e) => {
       if (e.target.tagName === 'CANVAS') {
+        if (e.button === 2) {
+          // Click derecho -> Menú Radial
+          setRadialMenu({ isOpen: true, x: e.clientX, y: e.clientY })
+          return
+        }
         dragging = true
         startX = e.screenX
         startY = e.screenY
@@ -116,6 +135,16 @@ export default function App() {
 
   return (
     <div className="app-container">
+      <Toast message={toast.message} isVisible={toast.isVisible} onClose={() => setToast({ ...toast, isVisible: false })} />
+      
+      <RadialMenu 
+        isOpen={radialMenu.isOpen} 
+        x={radialMenu.x} 
+        y={radialMenu.y} 
+        onClose={() => setRadialMenu(prev => ({ ...prev, isOpen: false }))} 
+        actions={radialActions} 
+      />
+
       <div className="bmo-wrapper">
         <ChatPanel
           isOpen={isChatOpen}
