@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import { app, BrowserWindow, ipcMain, screen, clipboard } from 'electron'
+import { autoUpdater } from 'electron-updater'
 import { aiEngine } from './ai/engine.js'
 import { memoryManager } from './memory/manager.js'
 import { executeTool } from './tools/index.js'
@@ -117,6 +118,11 @@ app.whenReady().then(() => {
   aiEngine.ping()
     .then(() => console.log('[BMO AI] 🧠 Cerebro conectado y listo (Ollama)'))
     .catch(err => console.error('[BMO AI] ❌ Error de conexión con Ollama. ¿Está corriendo en el puerto 11434?'))
+
+  // ── Auto Updates (Fase 9) ─────────────────────────
+  autoUpdater.checkForUpdatesAndNotify()
+    .then(() => console.log('[AutoUpdater] ✅ Chequeo de actualizaciones iniciado.'))
+    .catch(err => console.error('[AutoUpdater] ⚠️ Error al chequear actualizaciones:', err.message))
 
   console.log('[BMO Main] ✅ App lista')
 })
