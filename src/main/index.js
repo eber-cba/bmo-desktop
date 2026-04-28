@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import { app, BrowserWindow, ipcMain, screen, clipboard } from 'electron'
-import { autoUpdater } from 'electron-updater'
+import pkg from 'electron-updater'
+const { autoUpdater } = pkg
 import { aiEngine } from './ai/engine.js'
 import { memoryManager } from './memory/manager.js'
 import { executeTool } from './tools/index.js'
