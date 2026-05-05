@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import Bmo3D from './components/Bmo3D.jsx'
+import React, { useState, useEffect } from 'react'
+import BmoCss3D from './components/BmoCss3D.jsx'
 import ChatPanel from './components/ChatPanel.jsx'
 import RadialMenu from './components/RadialMenu.jsx'
 import Toast from './components/Toast.jsx'
@@ -7,131 +7,203 @@ import { useBmoMood } from './hooks/useBmoMood.js'
 import './styles.css'
 
 export default function App() {
-  const [isChatOpen, setIsChatOpen]   = useState(false)
-  const [messages, setMessages]       = useState([])
-  const [bmoBubbleText, setBmoBubbleText] = useState('')
-  const [isTyping, setIsTyping]       = useState(false)
-  const { mood, startThinking, startTalking, celebrate, showError } = useBmoMood()
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [bmoBubbleText, setBmoBubbleText] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const { mood, startThinking, startTalking, celebrate, showError } =
+    useBmoMood();
 
-  const [radialMenu, setRadialMenu] = useState({ isOpen: false, x: 0, y: 0 })
-  const [toast, setToast] = useState({ isVisible: false, message: '' })
+  const [radialMenu, setRadialMenu] = useState({ isOpen: false, x: 0, y: 0 });
+  const [toast, setToast] = useState({ isVisible: false, message: "" });
 
-  const showToast = (message) => setToast({ isVisible: true, message })
+  const showToast = (message) => setToast({ isVisible: true, message });
 
   const radialActions = [
-    { label: 'Chat', icon: '💬', onClick: () => setIsChatOpen(prev => !prev) },
-    { label: 'YouTube', icon: '🎵', onClick: () => { window.bmo?.executeTool('open_url', { url: 'https://youtube.com' }); showToast('Abriendo YouTube') } },
-    { label: 'Calculadora', icon: '🧮', onClick: () => { window.bmo?.executeTool('open_app', { app_name: 'calc' }); showToast('Abriendo Calculadora') } },
-    { label: 'Cerrar App', icon: '❌', onClick: () => window.close() }
-  ]
+    {
+      label: "Chat",
+      icon: "💬",
+      onClick: () => setIsChatOpen((prev) => !prev),
+    },
+    {
+      label: "YouTube",
+      icon: "🎵",
+      onClick: () => {
+        window.bmo?.executeTool("open_url", { url: "https://youtube.com" });
+        showToast("Abriendo YouTube");
+      },
+    },
+    {
+      label: "Calculadora",
+      icon: "🧮",
+      onClick: () => {
+        window.bmo?.executeTool("open_app", { app_name: "calc" });
+        showToast("Abriendo Calculadora");
+      },
+    },
+    { label: "Cerrar App", icon: "❌", onClick: () => window.close() },
+  ];
 
-  // ── Drag del personaje ─────────────────────────────────────────────────────
+  // ── Suprimir menú contextual del OS (click derecho = rotar BMO) ───────────
   useEffect(() => {
-    let dragging = false
-    let startX = 0, startY = 0
-
-    const onMouseDown = (e) => {
-      if (e.target.tagName === 'CANVAS') {
-        if (e.button === 2) {
-          // Click derecho -> Menú Radial
-          setRadialMenu({ isOpen: true, x: e.clientX, y: e.clientY })
-          return
-        }
-        dragging = true
-        startX = e.screenX
-        startY = e.screenY
-      }
-    }
-    const onMouseMove = (e) => {
-      if (!dragging) return
-      const dx = e.screenX - startX
-      const dy = e.screenY - startY
-      startX = e.screenX
-      startY = e.screenY
-      window.bmo?.drag({ deltaX: dx, deltaY: dy })
-    }
-    const onMouseUp = () => { dragging = false }
-
-    window.addEventListener('mousedown', onMouseDown)
-    window.addEventListener('mousemove', onMouseMove)
-    window.addEventListener('mouseup', onMouseUp)
-    return () => {
-      window.removeEventListener('mousedown', onMouseDown)
-      window.removeEventListener('mousemove', onMouseMove)
-      window.removeEventListener('mouseup', onMouseUp)
-    }
+    const noCtx = (e) => e.preventDefault()
+    window.addEventListener('contextmenu', noCtx)
+    return () => window.removeEventListener('contextmenu', noCtx)
   }, [])
+
+  // ── Drag de ventana — ref directo al wrapper ───────────────────────────────
+  const bmoWrapperRef = React.useRef(null);
+
+
+  useEffect(() => {
+    const el = bmoWrapperRef.current;
+    if (!el) return;
+
+    let dragging = false;
+    let startX = 0;
+    let startY = 0;
+
+    // mousedown directo en el wrapper — sin necesidad de filtrar con closest()
+    const onMouseDown = (e) => {
+      const onRotation = e.target.closest('.positioning');
+
+      if (e.button === 2) {
+        // Click derecho en zona de rotación → BmoCss3D lo maneja, no abrir menú
+        if (onRotation) return;
+        // Click derecho en resto del BMO → abrir Menú Radial
+        setRadialMenu({ isOpen: true, x: e.clientX, y: e.clientY });
+        return;
+      }
+
+      // Click izquierdo → siempre mover ventana
+      // (BmoCss3D usa solo botón derecho para rotar, no hay conflicto)
+      if (e.button === 0) {
+        dragging = true;
+        startX = e.screenX;
+        startY = e.screenY;
+        e.preventDefault();
+      }
+    };
+
+    // mousemove y mouseup en window — así no se pierde el drag si el mouse sale del área
+    const onMouseMove = (e) => {
+      if (!dragging) return;
+      const dx = e.screenX - startX;
+      const dy = e.screenY - startY;
+      startX = e.screenX;
+      startY = e.screenY;
+      window.bmo?.drag({ deltaX: dx, deltaY: dy });
+    };
+
+    const onMouseUp = () => {
+      dragging = false;
+    };
+
+    el.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+
+    return () => {
+      el.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, []);
 
   // ── Cargar historial al iniciar ────────────────────────────────────────────
   useEffect(() => {
     async function loadHistory() {
       if (window.bmo?.getHistory) {
-        const history = await window.bmo.getHistory()
-        setMessages(history?.length > 0
-          ? history
-          : [{ text: '¡Hola! Soy BMO. ¿En qué puedo ayudarte hoy? 🎮', sender: 'bmo' }]
-        )
+        const history = await window.bmo.getHistory();
+        setMessages(
+          history?.length > 0
+            ? history
+            : [
+                {
+                  text: "¡Hola! Soy BMO. ¿En qué puedo ayudarte hoy? 🎮",
+                  sender: "bmo",
+                },
+              ],
+        );
       }
     }
-    loadHistory()
-  }, [])
+    loadHistory();
+  }, []);
 
   // ── Auto-ocultar burbuja ───────────────────────────────────────────────────
   useEffect(() => {
     if (bmoBubbleText) {
-      const timer = setTimeout(() => setBmoBubbleText(''), 4000)
-      return () => clearTimeout(timer)
+      const timer = setTimeout(() => setBmoBubbleText(""), 4000);
+      return () => clearTimeout(timer);
     }
-  }, [bmoBubbleText])
+  }, [bmoBubbleText]);
 
   // ── Enviar mensaje ─────────────────────────────────────────────────────────
   const handleSendMessage = async (text) => {
-    if (!text.trim()) return
+    if (!text.trim()) return;
 
-    const newMsgs = [...messages, { text, sender: 'user' }]
-    setMessages(newMsgs)
-    setIsTyping(true)
-    startThinking()
+    const newMsgs = [...messages, { text, sender: "user" }];
+    setMessages(newMsgs);
+    setIsTyping(true);
+    startThinking();
 
     try {
-      const bmoHistory = newMsgs.map(m => ({
-        role: m.sender === 'user' ? 'user' : 'assistant',
-        content: m.text
-      }))
+      const bmoHistory = newMsgs.map((m) => ({
+        role: m.sender === "user" ? "user" : "assistant",
+        content: m.text,
+      }));
 
-      const response = await window.bmo.ask(bmoHistory)
-      
-      setIsTyping(false)
+      const response = await window.bmo.ask(bmoHistory);
 
-      if (response.type === 'tool') {
-        setMessages(prev => [...prev, { text: response.result, sender: 'tool', toolName: response.toolName }])
-        setBmoBubbleText('¡Ejecutando proceso! ⚙️')
-        celebrate()
+      setIsTyping(false);
+
+      if (response.type === "tool") {
+        setMessages((prev) => [
+          ...prev,
+          {
+            text: response.result,
+            sender: "tool",
+            toolName: response.toolName,
+          },
+        ]);
+        setBmoBubbleText("¡Ejecutando proceso! ⚙️");
+        celebrate();
       } else {
-        setMessages(prev => [...prev, { text: response.content, sender: 'bmo' }])
-        setBmoBubbleText(response.content)
-        startTalking()
+        setMessages((prev) => [
+          ...prev,
+          { text: response.content, sender: "bmo" },
+        ]);
+        setBmoBubbleText(response.content);
+        startTalking();
       }
     } catch (err) {
-      setIsTyping(false)
-      showError()
-      setBmoBubbleText('¡Piii piii! Error de sistema ⚡')
+      setIsTyping(false);
+      showError();
+      setBmoBubbleText("¡Piii piii! Error de sistema ⚡");
     }
-  }
+  };
 
   return (
     <div className="app-container">
-      <Toast message={toast.message} isVisible={toast.isVisible} onClose={() => setToast({ ...toast, isVisible: false })} />
-      
-      <RadialMenu 
-        isOpen={radialMenu.isOpen} 
-        x={radialMenu.x} 
-        y={radialMenu.y} 
-        onClose={() => setRadialMenu(prev => ({ ...prev, isOpen: false }))} 
-        actions={radialActions} 
+      <Toast
+        message={toast.message}
+        isVisible={toast.isVisible}
+        onClose={() => setToast({ ...toast, isVisible: false })}
       />
 
-      <div className={`bmo-wrapper ${radialMenu.isOpen ? 'is-menu-open' : ''}`}>
+      <RadialMenu
+        isOpen={radialMenu.isOpen}
+        x={radialMenu.x}
+        y={radialMenu.y}
+        onClose={() => setRadialMenu((prev) => ({ ...prev, isOpen: false }))}
+        actions={radialActions}
+      />
+
+      {/* ref directo — mousedown se registra exactamente en este elemento */}
+      <div
+        className={`bmo-wrapper ${radialMenu.isOpen ? "is-menu-open" : ""}`}
+        ref={bmoWrapperRef}
+      >
         <ChatPanel
           isOpen={isChatOpen}
           onClose={() => setIsChatOpen(false)}
@@ -139,15 +211,10 @@ export default function App() {
           onSendMessage={handleSendMessage}
           isTyping={isTyping}
         />
-        <Bmo3D
-          mood={mood}
-          onClick={() => {
-            celebrate()
-            setBmoBubbleText('¡Hahah! ¡Eso hace cosquillas! ✨')
-          }}
-          bubbleText={bmoBubbleText}
-        />
+        <div onDoubleClick={() => setIsChatOpen(true)}>
+          <BmoCss3D />
+        </div>
       </div>
     </div>
-  )
+  );
 }

@@ -1,6 +1,6 @@
-import React, { useMemo, useRef, useEffect } from 'react'
+import React, { useMemo, useRef, useEffect, Suspense } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { RoundedBox, Cylinder, Float, Environment, ContactShadows, Text, OrthographicCamera } from '@react-three/drei'
+import { RoundedBox, Cylinder, Float, ContactShadows, OrthographicCamera } from '@react-three/drei'
 import * as THREE from 'three'
 
 // ─── COLORES ─────────────────────────────────────────────────────────────────
@@ -101,7 +101,6 @@ function BmoModel({ mood }) {
     return c
   }, [])
   const textureRef = useMemo(() => new THREE.CanvasTexture(canvasRef), [canvasRef])
-  textureRef.colorSpace = THREE.SRGBColorSpace
 
   useFrame((state) => {
     const t = state.clock.elapsedTime * 60
@@ -178,11 +177,6 @@ function BmoModel({ mood }) {
           <meshStandardMaterial color={C.armTeal} roughness={0.6} />
         </Cylinder>
 
-        {/* Texto Lateral "BMO" */}
-        <Text position={[-1.61, 0, 0]} rotation={[0, -Math.PI/2, -Math.PI/2]} fontSize={0.8} color={C.armTeal} font="https://fonts.gstatic.com/s/bangers/v20/FeVQS0BTqb0h60ACH55Q2A.woff">
-          BMO
-        </Text>
-
       </Float>
     </group>
   )
@@ -196,15 +190,16 @@ export default function Bmo3D({ onClick, bubbleText, mood = 'idle' }) {
       onClick={onClick}
     >
       <Canvas shadows camera={{ position: [0, 0, 8], fov: 45 }}>
-        <ambientLight intensity={1.2} />
-        <directionalLight position={[5, 10, 5]} intensity={1.5} castShadow />
-        <spotLight position={[-5, 5, 5]} intensity={0.8} />
-        <Environment preset="city" />
-        
-        <BmoModel mood={mood} />
-        
-        {/* Sombra realista en el piso */}
-        <ContactShadows position={[0, -2.5, 0]} opacity={0.6} scale={10} blur={2} far={4} />
+        <Suspense fallback={null}>
+          <ambientLight intensity={1.5} />
+          <directionalLight position={[5, 10, 5]} intensity={2} castShadow />
+          <spotLight position={[-5, 5, 5]} intensity={1.5} />
+          
+          <BmoModel mood={mood} />
+          
+          {/* Sombra realista en el piso */}
+          <ContactShadows position={[0, -2.5, 0]} opacity={0.6} scale={10} blur={2} far={4} />
+        </Suspense>
       </Canvas>
     </div>
   )

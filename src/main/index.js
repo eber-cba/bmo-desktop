@@ -19,8 +19,8 @@ let win = null
 
 function createWindow() {
   win = new BrowserWindow({
-    width: 600,
-    height: 580,
+    width: 650,
+    height: 620,
     transparent: true,
     backgroundColor: '#00000000',
     frame: false,
@@ -37,25 +37,24 @@ function createWindow() {
 
   if (process.env.NODE_ENV === 'development') {
     win.loadURL('http://localhost:5174')
-    // DevTools comentado para no ensuciar la terminal con errores internos de Chromium
-    // win.webContents.openDevTools({ mode: 'detach' })
+    // Reabierto DevTools para ver si hay errores 3D
+    win.webContents.openDevTools({ mode: 'detach' })
   } else {
     win.loadFile(path.join(__dirname, '../../dist/renderer/index.html'))
   }
 
   // Posición inicial: esquina inferior derecha, asegurando que se vea todo el BMO y el chat
   const { width, height } = screen.getPrimaryDisplay().workAreaSize
-  win.setPosition(width - 600, height - 580)
+  win.setPosition(width - 650, height - 620)
 
   win.on('closed', () => { win = null })
   console.log('[BMO Window] ✅ Ventana creada')
 }
 
-// Parche para Windows: a veces la transparencia se rompe con aceleración por hardware
-app.disableHardwareAcceleration()
-
+// app.disableHardwareAcceleration()
 app.whenReady().then(() => {
   createWindow()
+  
   createTray(win)
 
   // ── IPC: Drag ──────────────────────────────────────

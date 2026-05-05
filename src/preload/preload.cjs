@@ -11,12 +11,11 @@ contextBridge.exposeInMainWorld('bmo', {
   // Obtener posición actual de la ventana
   getPosition: () => ipcRenderer.invoke('window:getPosition'),
 
-  // Fase 3, 4 & 5: IA, Memoria y Tools
+  // IA: soporta tanto .ask() como .sendMessage()
+  ask: (msg) => ipcRenderer.invoke('ai:message', msg),
   sendMessage: (msg) => ipcRenderer.invoke('ai:message', msg),
   getHistory: () => ipcRenderer.invoke('memory:getHistory'),
   executeTool: (toolName, params) => ipcRenderer.invoke('tool:execute', toolName, params),
-
-  // Fase 5: executeTool: (name, params) => ipcRenderer.invoke('tool:execute', name, params),
 })
 
 console.log('[BMO Preload] ✅ contextBridge listo')

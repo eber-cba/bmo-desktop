@@ -45,7 +45,7 @@ html, body, #root {
   align-items: flex-end;
   justify-content: flex-end;
   padding: 16px;
-  overflow: hidden;
+  overflow: visible;  /* visible: permite que BMO 3D desborde sin recortarse */
 }
 
 /* ── BMO wrapper ──────────────────────────────────────────────── */
@@ -54,20 +54,17 @@ html, body, #root {
   display: flex;
   align-items: flex-end;
   gap: 12px;
-  -webkit-app-region: drag;
+  /* Drag manejado por JS/IPC — NO usar -webkit-app-region */
 }
 .bmo-wrapper.is-menu-open {
-  -webkit-app-region: no-drag !important;
+  /* sin drag region cuando el menú está abierto */
 }
 
 .bmo-wrapper canvas {
-  -webkit-app-region: no-drag;
   cursor: pointer;
-  filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3));
-  transition: filter 0.2s ease;
 }
 .bmo-wrapper canvas:hover {
-  filter: drop-shadow(3px 6px 12px rgba(60,185,168,0.5));
+  /* removed filter drop-shadow to fix WebGL */
 }
 
 /* ═══════════════════════════════════════════════════════════════
