@@ -35,10 +35,9 @@ export default function BmoThreeJs({
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
       antialias: true,
-      premultipliedAlpha: false,
     });
-    // Hack para Electron/Windows: usar blanco transparente en lugar de negro para evitar el halo gris
-    renderer.setClearColor(0xffffff, 0);
+    // Limpieza estándar para fondo totalmente transparente
+    renderer.setClearColor(0x000000, 0);
     renderer.setClearAlpha(0);
     renderer.setSize(width, height);
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -75,10 +74,10 @@ export default function BmoThreeJs({
     const darkSlot = 0x153028;
     const screenColor = 0xeafaf1; // Más brillante para evitar que se vea oscura
 
-    // Usamos Lambert para un look más plano y "cartoon"
-    const bodyMat = new THREE.MeshLambertMaterial({ color: bodyColor });
-    const darkMat = new THREE.MeshLambertMaterial({ color: darkSlot });
-    const screenMat = new THREE.MeshLambertMaterial({ color: screenColor });
+    // Usamos StandardMaterial con un poco de brillo para quitar el efecto "opaco/tiza"
+    const bodyMat = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.3, metalness: 0.1 });
+    const darkMat = new THREE.MeshStandardMaterial({ color: darkSlot, roughness: 0.5, metalness: 0.1 });
+    const screenMat = new THREE.MeshStandardMaterial({ color: screenColor, roughness: 0.2, metalness: 0.1 });
 
     // ── BMO GROUP (Container for everything) ─────────────────────────
     const bmoGroup = new THREE.Group();
@@ -100,7 +99,7 @@ export default function BmoThreeJs({
 
     // Marco oscuro que da el efecto de hundimiento (bevel/inset) para la pantalla
     const frameGeo = new RoundedBoxGeometry(sw + 0.2, sh + 0.2, 0.1, 4, 0.1);
-    const frameMat = new THREE.MeshLambertMaterial({ color: 0x36a887 }); // Verde sombra
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x36a887, roughness: 0.5, metalness: 0.1 }); // Verde sombra
     const frameMesh = new THREE.Mesh(frameGeo, frameMat);
     frameMesh.position.set(0, 2.2, d / 2 + 0.05); // Pantalla posicionada arriba
     bmoGroup.add(frameMesh);
