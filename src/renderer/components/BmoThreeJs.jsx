@@ -82,9 +82,18 @@ export default function BmoThreeJs({ physicsDrag, onDoubleClick, mood = 'idle' }
 
     // 2. SCREEN & FACE
     const sw = 5.8, sh = 4.4;
-    const screenGeo = new THREE.PlaneGeometry(sw, sh);
+    
+    // Marco oscuro que da el efecto de hundimiento (bevel/inset) para la pantalla
+    const frameGeo = new RoundedBoxGeometry(sw + 0.25, sh + 0.25, 0.1, 4, 0.1);
+    const frameMat = new THREE.MeshLambertMaterial({ color: 0x48b898 }); // Verde sombra
+    const frameMesh = new THREE.Mesh(frameGeo, frameMat);
+    frameMesh.position.set(0, 1.8, d / 2 + 0.05);
+    bmoGroup.add(frameMesh);
+
+    // Pantalla en sí
+    const screenGeo = new RoundedBoxGeometry(sw, sh, 0.05, 4, 0.05);
     const screenMesh = new THREE.Mesh(screenGeo, screenMat);
-    screenMesh.position.set(0, 1.8, d / 2 + 0.01);
+    screenMesh.position.set(0, 1.8, d / 2 + 0.06); 
     bmoGroup.add(screenMesh);
 
     // Preparar el CanvasTexture para las caras dinámicas
@@ -94,60 +103,91 @@ export default function BmoThreeJs({ physicsDrag, onDoubleClick, mood = 'idle' }
     faceTextureRef.current = new THREE.CanvasTexture(faceCanvasRef.current);
     faceTextureRef.current.minFilter = THREE.LinearFilter;
     
-    // Un plano apenas por encima de la pantalla para renderizar el Canvas
+    // Plano súper delgado para la cara apoyado sobre la pantalla
     const facePlane = new THREE.Mesh(
       new THREE.PlaneGeometry(sw, sh),
       new THREE.MeshBasicMaterial({ map: faceTextureRef.current, transparent: true })
     );
-    facePlane.position.set(0, 0, 0.02);
+    facePlane.position.set(0, 0, 0.026); // Apenas encima de la superficie de la pantalla
     screenMesh.add(facePlane);
 
     // 3. BUTTONS (Front panel)
-    // Disc drive slot
-    const slotMesh = new THREE.Mesh(new RoundedBoxGeometry(3.5, 0.3, 0.2, 2, 0.1), darkMat);
-    slotMesh.position.set(-0.8, -1.2, d / 2 + 0.05);
+    // Settings para que todos los botones tengan un relieve biselado perfecto
+    const btnExtrudeSettings = { depth: 0.15, bevelEnabled: true, bevelSegments: 3, steps: 1, bevelSize: 0.04, bevelThickness: 0.04 };
+    
+    // Disc drive slot (con borde hundido)
+    const slotW = 3.5, slotH = 0.4;
+    const slotBorderGeo = new RoundedBoxGeometry(slotW + 0.2, slotH + 0.2, 0.05, 4, 0.1);
+    const slotBorder = new THREE.Mesh(slotBorderGeo, frameMat);
+    slotBorder.position.set(-0.8, -1.0, d / 2 + 0.05);
+    bmoGroup.add(slotBorder);
+    
+    const slotMesh = new THREE.Mesh(new RoundedBoxGeometry(slotW, slotH, 0.1, 2, 0.1), darkMat);
+    slotMesh.position.set(-0.8, -1.0, d / 2 + 0.06);
     bmoGroup.add(slotMesh);
 
-    // Yellow D-Pad
-    const yellowMat = new THREE.MeshStandardMaterial({ color: 0xffd700, roughness: 0.4 });
-    const dpadGroup = new THREE.Group();
-    dpadGroup.position.set(-1.8, -3.0, d / 2 + 0.1);
-    const dpadV = new THREE.Mesh(new THREE.BoxGeometry(0.7, 2.1, 0.2), yellowMat);
-    const dpadH = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.7, 0.2), yellowMat);
-    dpadGroup.add(dpadV, dpadH);
-    bmoGroup.add(dpadGroup);
+    // Materiales de plástico pulido para los botones
+    const btnMatOptions = { roughness: 0.2, metalness: 0.1 };
 
-    // Triangle button (Cyan)
-    const cyanMat = new THREE.MeshStandardMaterial({ color: 0x00d8ff, roughness: 0.4 });
-    const triGeo = new THREE.CylinderGeometry(0.6, 0.6, 0.2, 3);
+    // D-Pad (Cruz Amarilla)
+    const yellowMat = new THREE.MeshStandardMaterial({ color: 0xffd700, ...btnMatOptions });
+    const dpadShape = new THREE.Shape();
+    dpadShape.moveTo(-0.35, -0.35); dpadShape.lineTo(-1.05, -0.35); dpadShape.lineTo(-1.05, 0.35); dpadShape.lineTo(-0.35, 0.35);
+    dpadShape.lineTo(-0.35, 1.05); dpadShape.lineTo(0.35, 1.05); dpadShape.lineTo(0.35, 0.35); dpadShape.lineTo(1.05, 0.35);
+    dpadShape.lineTo(1.05, -0.35); dpadShape.lineTo(0.35, -0.35); dpadShape.lineTo(0.35, -1.05); dpadShape.lineTo(-0.35, -1.05);
+    dpadShape.lineTo(-0.35, -0.35);
+    const dpadGeo = new THREE.ExtrudeGeometry(dpadShape, btnExtrudeSettings);
+    const dpadBtn = new THREE.Mesh(dpadGeo, yellowMat);
+    dpadBtn.position.set(-1.8, -2.8, d / 2 + 0.02);
+    bmoGroup.add(dpadBtn);
+
+    // Botón Triángulo (Cyan)
+    const cyanMat = new THREE.MeshStandardMaterial({ color: 0x00ffff, ...btnMatOptions });
+    const triShape = new THREE.Shape();
+    const triR = 0.6;
+    triShape.moveTo(0, triR);
+    triShape.lineTo(triR * Math.cos(-Math.PI/6), triR * Math.sin(-Math.PI/6));
+    triShape.lineTo(-triR * Math.cos(-Math.PI/6), triR * Math.sin(-Math.PI/6));
+    triShape.lineTo(0, triR);
+    const triGeo = new THREE.ExtrudeGeometry(triShape, btnExtrudeSettings);
     const triBtn = new THREE.Mesh(triGeo, cyanMat);
-    triBtn.rotation.x = Math.PI / 2;
-    triBtn.rotation.y = Math.PI / 6; // Orient point up
-    triBtn.position.set(0.6, -2.5, d / 2 + 0.1);
+    triBtn.position.set(0.6, -2.8, d / 2 + 0.02);
     bmoGroup.add(triBtn);
 
-    // Round button (Red)
-    const redMat = new THREE.MeshStandardMaterial({ color: 0xff0055, roughness: 0.4 });
-    const roundBtn = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.2, 16), redMat);
-    roundBtn.rotation.x = Math.PI / 2;
-    roundBtn.position.set(2.2, -3.5, d / 2 + 0.1);
-    bmoGroup.add(roundBtn);
-    
-    // Small round button (Green)
-    const greenMat = new THREE.MeshStandardMaterial({ color: 0x00ff00, roughness: 0.4 });
-    const smallBtn = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.2, 16), greenMat);
-    smallBtn.rotation.x = Math.PI / 2;
-    smallBtn.position.set(2.8, -2.5, d / 2 + 0.1);
-    bmoGroup.add(smallBtn);
+    const circleShape = (r) => { const s = new THREE.Shape(); s.absarc(0,0,r,0,Math.PI*2,false); return s; };
 
-    // Select/Start buttons (Blue)
-    const blueMat = new THREE.MeshStandardMaterial({ color: 0x0000aa, roughness: 0.4 });
-    const selBtn = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.25, 0.2), blueMat);
-    selBtn.position.set(-1.8, -4.5, d / 2 + 0.1);
+    // Botón Grande Rojo
+    const redMat = new THREE.MeshStandardMaterial({ color: 0xff0055, ...btnMatOptions });
+    const redGeo = new THREE.ExtrudeGeometry(circleShape(0.7), btnExtrudeSettings);
+    const redBtn = new THREE.Mesh(redGeo, redMat);
+    redBtn.position.set(1.4, -4.0, d / 2 + 0.02);
+    bmoGroup.add(redBtn);
+    
+    // Botón Chico Verde
+    const greenMat = new THREE.MeshStandardMaterial({ color: 0x00ff00, ...btnMatOptions });
+    const smallBtnGeo = new THREE.ExtrudeGeometry(circleShape(0.35), btnExtrudeSettings);
+    const greenBtn = new THREE.Mesh(smallBtnGeo, greenMat);
+    greenBtn.position.set(2.8, -3.2, d / 2 + 0.02);
+    bmoGroup.add(greenBtn);
+
+    // Botón Chico Azul (Arriba del verde)
+    const blueBtnMat = new THREE.MeshStandardMaterial({ color: 0x2200ff, ...btnMatOptions });
+    const topBlueBtn = new THREE.Mesh(smallBtnGeo, blueBtnMat);
+    topBlueBtn.position.set(2.4, -1.8, d / 2 + 0.02);
+    bmoGroup.add(topBlueBtn);
+
+    // Botones Select/Start (Píldoras Azules)
+    const pillShape = new THREE.Shape();
+    pillShape.absarc(-0.35, 0, 0.15, Math.PI/2, Math.PI*1.5, false);
+    pillShape.absarc(0.35, 0, 0.15, -Math.PI/2, Math.PI/2, false);
+    const pillGeo = new THREE.ExtrudeGeometry(pillShape, btnExtrudeSettings);
+    
+    const selBtn = new THREE.Mesh(pillGeo, blueBtnMat);
+    selBtn.position.set(-1.8, -4.4, d / 2 + 0.02);
     bmoGroup.add(selBtn);
     
-    const startBtn = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.25, 0.2), blueMat);
-    startBtn.position.set(-0.6, -4.5, d / 2 + 0.1);
+    const startBtn = new THREE.Mesh(pillGeo, blueBtnMat);
+    startBtn.position.set(-0.6, -4.4, d / 2 + 0.02);
     bmoGroup.add(startBtn);
 
     // ── SIDE DETAILS (B M O & Speakers) ─────────────────────────
