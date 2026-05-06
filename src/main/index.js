@@ -22,7 +22,6 @@ function createWindow() {
     width: 650,
     height: 620,
     transparent: true,
-    backgroundColor: '#00000000',
     frame: false,
     alwaysOnTop: true,
     resizable: false,
@@ -37,8 +36,9 @@ function createWindow() {
 
   if (process.env.NODE_ENV === 'development') {
     win.loadURL('http://localhost:5174')
-    // Reabierto DevTools para ver si hay errores 3D
-    win.webContents.openDevTools({ mode: 'detach' })
+    // IMPORTANTE: Abrir DevTools rompe la transparencia en Windows, 
+    // creando una caja gigante negra transparente.
+    // win.webContents.openDevTools({ mode: 'detach' })
   } else {
     win.loadFile(path.join(__dirname, '../../dist/renderer/index.html'))
   }

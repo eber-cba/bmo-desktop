@@ -34,7 +34,8 @@ export default function BmoThreeJs({
 
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
-      antialias: true,
+      antialias: false,
+      preserveDrawingBuffer: true,
     });
     // Limpieza estándar para fondo totalmente transparente
     renderer.setClearColor(0x000000, 0);
@@ -47,7 +48,6 @@ export default function BmoThreeJs({
     renderer.domElement.style.border = "none";
     renderer.domElement.style.outline = "none";
     renderer.domElement.style.boxShadow = "none";
-    renderer.domElement.style.opacity = "0.999"; // Hack adicional para forzar recomposición limpia
 
     mountRef.current.appendChild(renderer.domElement);
 
@@ -70,9 +70,9 @@ export default function BmoThreeJs({
 
     // ── MATERIALS ───────────────────────────────────────────────────
     // Colores más fieles a la referencia (verde menta brillante)
-    const bodyColor = 0x6de2c3; // Más claro y vibrante
+    const bodyColor = 0x63bda4; // Más claro y vibrante
     const darkSlot = 0x153028;
-    const screenColor = 0xeafaf1; // Más brillante para evitar que se vea oscura
+    const screenColor = 0xd9ffea; // Más brillante para evitar que se vea oscura
 
     // Usamos StandardMaterial con un poco de brillo para quitar el efecto "opaco/tiza"
     const bodyMat = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.3, metalness: 0.1 });
