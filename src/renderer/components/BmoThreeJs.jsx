@@ -42,6 +42,7 @@ export default function BmoThreeJs({
     renderer.setClearAlpha(0);
     renderer.setSize(width, height);
     renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.outputEncoding = THREE.sRGBEncoding; // Corrige colores opacos/oscuros en Three.js r134
 
     // Forzar que el elemento HTML del canvas no tenga NINGÚN fondo ni borde
     renderer.domElement.style.backgroundColor = "transparent";
