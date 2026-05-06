@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './BmoCss3D.css'
 
 /* ─── Rotación Y con drag de botón derecho ─────────────────────── */
@@ -73,9 +73,63 @@ export default function BmoCss3D({
   onBodyClick        = null,
   screenContent      = null,
   mood               = 'neutral',
+  physicsDrag        = { vx: 0, vy: 0 },
 }) {
   const rootRef        = useRef(null)
   const positioningRef = useRef(null)
+  const bmoRef         = useRef(null)
+
+  // ── Física de resorte para brazos y piernas ─────────────────────────────
+  // arm-swing: ángulo extra en rotateX del brazo (responde a vy)
+  // leg-swing: ángulo extra en rotateZ de la pierna (responde a vx)
+  const springRef = useRef({
+    armAngle: 0,   armVel: 0,
+    legAngle: 0,   legVel: 0,
+  })
+  const dragVelRef = useRef({ vx: 0, vy: 0 })
+  const rafRef = useRef(null)
+
+  // Stiffness y damping del resorte
+  const STIFFNESS = 0.18
+  const DAMPING   = 0.72
+  const MAX_SWING = 35   // grados máximos
+  const VEL_SCALE = 3.5  // cuánto influye la velocidad del drag
+
+  useEffect(() => {
+    // Actualizar velocidad de drag cuando cambia el prop
+    dragVelRef.current = physicsDrag
+  }, [physicsDrag])
+
+  useEffect(() => {
+    function tick() {
+      const s = springRef.current
+      const { vx, vy } = dragVelRef.current
+
+      // Fuerza externa = velocidad del drag escalada
+      const armForce = vy * VEL_SCALE   // drag vertical mueve brazos
+      const legForce = vx * VEL_SCALE   // drag horizontal mueve piernas
+
+      // Spring-damper: a = -k*x - c*v + F
+      const armAcc = -STIFFNESS * s.armAngle - (1 - DAMPING) * s.armVel + armForce * 0.12
+      const legAcc = -STIFFNESS * s.legAngle - (1 - DAMPING) * s.legVel + legForce * 0.12
+
+      s.armVel += armAcc
+      s.legVel += legAcc
+      s.armAngle = Math.max(-MAX_SWING, Math.min(MAX_SWING, s.armAngle + s.armVel))
+      s.legAngle = Math.max(-MAX_SWING, Math.min(MAX_SWING, s.legAngle + s.legVel))
+
+      // Aplicar via CSS custom properties en el elemento .bmo
+      if (bmoRef.current) {
+        bmoRef.current.style.setProperty('--arm-swing', `${s.armAngle.toFixed(2)}deg`)
+        bmoRef.current.style.setProperty('--leg-swing', `${s.legAngle.toFixed(2)}deg`)
+      }
+
+      rafRef.current = requestAnimationFrame(tick)
+    }
+
+    rafRef.current = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(rafRef.current)
+  }, [])
 
   // ── Rotación + prevención de menú contextual del OS ──
   useEffect(() => {
@@ -101,7 +155,7 @@ export default function BmoCss3D({
       <div className="bmo3d-scale-wrapper">
         <div className="bmo3d-stage">
           <div className="positioning" ref={positioningRef}>
-            <div className="bmo">
+            <div className="bmo" ref={bmoRef}>
 
               {/* BACK */}
               <figure className="back">

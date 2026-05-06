@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import BmoCss3D from './components/BmoCss3D.jsx'
 import ChatPanel from './components/ChatPanel.jsx'
 import RadialMenu from './components/RadialMenu.jsx'
@@ -53,6 +53,9 @@ export default function App() {
 
   // ── Drag de ventana — ref directo al wrapper ───────────────────────────────
   const bmoWrapperRef = React.useRef(null);
+  const [physicsDrag, setPhysicsDrag] = useState({ vx: 0, vy: 0 });
+  const physicsVelRef = useRef({ vx: 0, vy: 0 });
+  const decayTimerRef = useRef(null);
 
 
   useEffect(() => {
@@ -63,29 +66,25 @@ export default function App() {
     let startX = 0;
     let startY = 0;
 
-    // mousedown directo en el wrapper — sin necesidad de filtrar con closest()
     const onMouseDown = (e) => {
       const onRotation = e.target.closest('.positioning');
 
       if (e.button === 2) {
-        // Click derecho en zona de rotación → BmoCss3D lo maneja, no abrir menú
         if (onRotation) return;
-        // Click derecho en resto del BMO → abrir Menú Radial
         setRadialMenu({ isOpen: true, x: e.clientX, y: e.clientY });
         return;
       }
 
-      // Click izquierdo → siempre mover ventana
-      // (BmoCss3D usa solo botón derecho para rotar, no hay conflicto)
       if (e.button === 0) {
         dragging = true;
         startX = e.screenX;
         startY = e.screenY;
         e.preventDefault();
+        // Parar el decay cuando empieza un nuevo drag
+        if (decayTimerRef.current) clearInterval(decayTimerRef.current);
       }
     };
 
-    // mousemove y mouseup en window — así no se pierde el drag si el mouse sale del área
     const onMouseMove = (e) => {
       if (!dragging) return;
       const dx = e.screenX - startX;
@@ -93,10 +92,28 @@ export default function App() {
       startX = e.screenX;
       startY = e.screenY;
       window.bmo?.drag({ deltaX: dx, deltaY: dy });
+
+      // Actualizar velocidad para la física
+      physicsVelRef.current = { vx: dx, vy: dy };
+      setPhysicsDrag({ vx: dx, vy: dy });
     };
 
     const onMouseUp = () => {
+      if (!dragging) return;
       dragging = false;
+      // Decaer la velocidad gradualmente al soltar
+      decayTimerRef.current = setInterval(() => {
+        physicsVelRef.current = {
+          vx: physicsVelRef.current.vx * 0.8,
+          vy: physicsVelRef.current.vy * 0.8,
+        };
+        const { vx, vy } = physicsVelRef.current;
+        setPhysicsDrag({ vx, vy });
+        if (Math.abs(vx) < 0.1 && Math.abs(vy) < 0.1) {
+          clearInterval(decayTimerRef.current);
+          setPhysicsDrag({ vx: 0, vy: 0 });
+        }
+      }, 16);
     };
 
     el.addEventListener('mousedown', onMouseDown);
@@ -107,6 +124,7 @@ export default function App() {
       el.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
+      if (decayTimerRef.current) clearInterval(decayTimerRef.current);
     };
   }, []);
 
@@ -212,7 +230,7 @@ export default function App() {
           isTyping={isTyping}
         />
         <div onDoubleClick={() => setIsChatOpen(true)}>
-          <BmoCss3D />
+          <BmoCss3D physicsDrag={physicsDrag} />
         </div>
       </div>
     </div>

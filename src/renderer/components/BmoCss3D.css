@@ -6,8 +6,8 @@
    no queden cortados. position:relative + absolute en el stage para
    que transform-origin:top left funcione correctamente. */
 .bmo3d-scale-wrapper {
-  width: 275px;
-  height: 320px;   /* extra vertical para overflow de perspectiva arriba */
+  width: 374px;
+  height: 435px;   /* extra vertical para overflow de perspectiva arriba */
   overflow: visible;
   position: relative;
 }
@@ -16,7 +16,7 @@
   top: 50px;         /* buffer: contenido en perspectiva puede aparecer arriba */
   left: 0;
   transform-origin: top left;
-  transform: scale(0.5);   /* 550 * 0.5 = 275px visual */
+  transform: scale(0.68);   /* 550 * 0.68 = 374px visual */
 }
 
 
@@ -29,6 +29,9 @@
   --screen: #d7fae2;
   --outline: #075636;
   --body:   #6fcaa7;
+  /* Física de resorte — sobreescritas por JS en tiempo real */
+  --arm-swing: 0deg;
+  --leg-swing: 0deg;
 }
 
 .bmo3d-root {
@@ -165,7 +168,7 @@
   -webkit-backface-visibility: visible;
   transform-origin: 50% 0;
   border-radius: 0 0 0.3em 0.3em;
-  transform: rotateX(15deg);
+  transform: rotateX(calc(15deg + var(--arm-swing)));
 }
 .bmo .arm:after, .bmo .arm:before {
   content: "";
@@ -212,7 +215,7 @@
   -webkit-backface-visibility: visible;
   transform-origin: 50% 0;
   transform-style: preserve-3d;
-  transform: rotateX(90deg);
+  transform: rotateX(90deg) rotateZ(var(--leg-swing));
 }
 .bmo .leg.left { left: 76%; }
 .bmo .leg:after {
