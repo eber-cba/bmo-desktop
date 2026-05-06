@@ -8,6 +8,9 @@ contextBridge.exposeInMainWorld('bmo', {
   // Mover la ventana (drag desde React)
   drag: (delta) => ipcRenderer.send('window:drag', delta),
 
+  // Ignorar clicks para que pasen al escritorio
+  setIgnoreMouseEvents: (ignore, options) => ipcRenderer.send('window:setIgnoreMouseEvents', ignore, options),
+
   // Obtener posición actual de la ventana
   getPosition: () => ipcRenderer.invoke('window:getPosition'),
 

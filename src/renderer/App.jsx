@@ -230,10 +230,10 @@ export default function App() {
           onSendMessage={handleSendMessage}
           isTyping={isTyping}
         />
-        <div onDoubleClick={() => setIsChatOpen(true)}>
-          {/* <BmoCss3D physicsDrag={physicsDrag} /> */}
-          <BmoThreeJs physicsDrag={physicsDrag} />
-        </div>
+        <BmoThreeJs 
+          physicsDrag={physicsDrag} 
+          onDoubleClick={() => setIsChatOpen(true)}
+        />
       </div>
     </div>
   );

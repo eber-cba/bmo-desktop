@@ -65,6 +65,13 @@ app.whenReady().then(() => {
     win.setPosition(x + deltaX, y + deltaY)
   })
 
+  // ── IPC: Ignore Mouse Events (Para hacer click-through en el canvas)
+  ipcMain.on('window:setIgnoreMouseEvents', (_, ignore, options) => {
+    if (!win) return
+    // options = { forward: true } es importante para seguir recibiendo mousemove
+    win.setIgnoreMouseEvents(ignore, options)
+  })
+
   // ── IPC: Posición ──────────────────────────────────
   ipcMain.handle('window:getPosition', () => {
     return win ? win.getPosition() : [0, 0]
