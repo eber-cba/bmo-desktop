@@ -2,21 +2,14 @@ import React, { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 
-export default function BmoThreeJs({
-  onDoubleClick = null,
-  onTriangleClick = null,
-  onFaceClick = null,
-  onLeftArmClick = null,
-  onRightArmClick = null,
-  onLeftLegClick = null,
-  onRightLegClick = null,
-  onBodyClick = null,
-  screenContent = null,
-  mood = 'neutral',
-  physicsDrag = { vx: 0, vy: 0 },
-}) {
+export default function BmoThreeJs({ physicsDrag, onDoubleClick, mood = 'idle' }) {
   const mountRef = useRef(null);
   const dragVelRef = useRef({ vx: 0, vy: 0 });
+
+  // Refs para la cara dinámica
+  const faceCanvasRef = useRef(document.createElement('canvas'));
+  const faceCtxRef = useRef(null);
+  const faceTextureRef = useRef(null);
 
   // Update physics ref on prop change
   useEffect(() => {
@@ -94,26 +87,20 @@ export default function BmoThreeJs({
     screenMesh.position.set(0, 1.8, d / 2 + 0.01);
     bmoGroup.add(screenMesh);
 
-    // Face features
-    const eyeGeo = new THREE.CircleGeometry(0.2, 16);
-    const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-    const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-    leftEye.position.set(-1.2, 0.2, 0.02);
-    screenMesh.add(leftEye);
+    // Preparar el CanvasTexture para las caras dinámicas
+    faceCanvasRef.current.width = 512;
+    faceCanvasRef.current.height = 384;
+    faceCtxRef.current = faceCanvasRef.current.getContext('2d');
+    faceTextureRef.current = new THREE.CanvasTexture(faceCanvasRef.current);
+    faceTextureRef.current.minFilter = THREE.LinearFilter;
     
-    const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-    rightEye.position.set(1.2, 0.2, 0.02);
-    screenMesh.add(rightEye);
-
-    // Mouth
-    const curve = new THREE.EllipseCurve(0, -0.2, 0.6, 0.4, 0, Math.PI, false, 0);
-    const points = curve.getPoints(20);
-    const mouthGeo = new THREE.BufferGeometry().setFromPoints(points);
-    const mouthMat = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
-    const mouth = new THREE.Line(mouthGeo, mouthMat);
-    mouth.rotation.x = Math.PI; // Flip to smile
-    mouth.position.set(0, 0, 0.02);
-    screenMesh.add(mouth);
+    // Un plano apenas por encima de la pantalla para renderizar el Canvas
+    const facePlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(sw, sh),
+      new THREE.MeshBasicMaterial({ map: faceTextureRef.current, transparent: true })
+    );
+    facePlane.position.set(0, 0, 0.02);
+    screenMesh.add(facePlane);
 
     // 3. BUTTONS (Front panel)
     // Disc drive slot
@@ -466,9 +453,120 @@ export default function BmoThreeJs({
       // Dispose geometries/materials
       bodyGeo.dispose(); bodyMat.dispose();
       screenGeo.dispose(); screenMat.dispose();
-      // ... (other disposals omitted for brevity, but WebGL context is cleaned up by renderer.dispose)
     };
   }, []);
+
+  // ── DIBUJAR CARA DINÁMICA SEGÚN EL MOOD ─────────────────────────
+  useEffect(() => {
+    const ctx = faceCtxRef.current;
+    if (!ctx) return;
+    const cw = faceCanvasRef.current.width;
+    const ch = faceCanvasRef.current.height;
+    
+    ctx.clearRect(0, 0, cw, ch);
+    ctx.fillStyle = '#222222'; // Ojos y bordes
+    ctx.strokeStyle = '#222222';
+    ctx.lineWidth = 14;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    const cx = cw / 2;
+    const cy = ch / 2 - 20;
+
+    const drawOvalEye = (x, y) => {
+      ctx.beginPath();
+      ctx.ellipse(x, y, 16, 26, 0, 0, Math.PI * 2);
+      ctx.fill();
+    };
+
+    const drawHappyEye = (x, y) => {
+      ctx.beginPath();
+      ctx.moveTo(x - 24, y);
+      ctx.quadraticCurveTo(x, y - 28, x + 24, y);
+      ctx.stroke();
+    };
+
+    if (mood === 'celebrate' || mood === 'happy') {
+      // Súper feliz (Ojos cerrados en ^, boca grande abierta con dientes)
+      drawHappyEye(cx - 100, cy - 10);
+      drawHappyEye(cx + 100, cy - 10);
+      
+      // Boca gigante abierta
+      ctx.beginPath();
+      ctx.moveTo(cx - 60, cy + 30);
+      ctx.quadraticCurveTo(cx, cy + 40, cx + 60, cy + 30);
+      ctx.bezierCurveTo(cx + 70, cy + 120, cx - 70, cy + 120, cx - 60, cy + 30);
+      ctx.fillStyle = '#008a6e'; // Fondo de la boca
+      ctx.fill();
+      ctx.stroke();
+
+      // Dientes blancos arriba
+      ctx.beginPath();
+      ctx.moveTo(cx - 56, cy + 34);
+      ctx.quadraticCurveTo(cx, cy + 44, cx + 56, cy + 34);
+      ctx.quadraticCurveTo(cx + 56, cy + 60, cx, cy + 60);
+      ctx.quadraticCurveTo(cx - 56, cy + 60, cx - 56, cy + 34);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.stroke();
+      
+    } else if (mood === 'talking') {
+      // Hablando (Ojos ovalados, boca redonda abierta)
+      drawOvalEye(cx - 100, cy - 10);
+      drawOvalEye(cx + 100, cy - 10);
+      
+      ctx.beginPath();
+      ctx.moveTo(cx - 50, cy + 40);
+      ctx.quadraticCurveTo(cx, cy + 30, cx + 50, cy + 40);
+      ctx.bezierCurveTo(cx + 50, cy + 100, cx - 50, cy + 100, cx - 50, cy + 40);
+      ctx.fillStyle = '#008a6e';
+      ctx.fill();
+      ctx.stroke();
+
+    } else if (mood === 'thinking') {
+      // Pensando (Ojos ovalados, boca recta de concentración)
+      drawOvalEye(cx - 100, cy - 10);
+      drawOvalEye(cx + 100, cy - 10);
+      
+      ctx.beginPath();
+      ctx.moveTo(cx - 40, cy + 50);
+      ctx.lineTo(cx + 40, cy + 50);
+      ctx.stroke();
+
+    } else if (mood === 'error') {
+      // Error (Ojos en X, boca ondulada)
+      ctx.lineWidth = 12;
+      const drawX = (x, y) => {
+        ctx.beginPath();
+        ctx.moveTo(x - 20, y - 20); ctx.lineTo(x + 20, y + 20);
+        ctx.moveTo(x + 20, y - 20); ctx.lineTo(x - 20, y + 20);
+        ctx.stroke();
+      };
+      drawX(cx - 100, cy - 10);
+      drawX(cx + 100, cy - 10);
+      
+      ctx.beginPath();
+      ctx.moveTo(cx - 40, cy + 50);
+      ctx.lineTo(cx - 20, cy + 40);
+      ctx.lineTo(cx, cy + 60);
+      ctx.lineTo(cx + 20, cy + 40);
+      ctx.lineTo(cx + 40, cy + 50);
+      ctx.stroke();
+
+    } else {
+      // Idle (Ojos ovalados, sonrisa estándar como en la foto)
+      drawOvalEye(cx - 100, cy - 10);
+      drawOvalEye(cx + 100, cy - 10);
+      
+      ctx.beginPath();
+      ctx.arc(cx, cy + 20, 60, 0.2 * Math.PI, 0.8 * Math.PI, false);
+      ctx.stroke();
+    }
+
+    if (faceTextureRef.current) {
+      faceTextureRef.current.needsUpdate = true;
+    }
+  }, [mood]);
 
   return (
     <div 
@@ -496,23 +594,7 @@ export default function BmoThreeJs({
         }}
       />
       
-      {/* HTML Screen Overlay (Tracks roughly over the 3D screen face) */}
-      {screenContent && (
-        <div style={{
-          position: 'absolute',
-          top: '32%', 
-          left: '26%', 
-          width: '48%', 
-          height: '24%',
-          pointerEvents: 'none',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 10
-        }}>
-          {screenContent}
-        </div>
-      )}
+
     </div>
   );
 }

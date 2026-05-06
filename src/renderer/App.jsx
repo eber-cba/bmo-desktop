@@ -191,6 +191,7 @@ export default function App() {
         />
         <BmoThreeJs 
           physicsDrag={physicsDrag} 
+          mood={mood}
           onDoubleClick={() => setIsChatOpen(true)}
         />
       </div>
