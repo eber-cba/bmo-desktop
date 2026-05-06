@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import BmoCss3D from './components/BmoCss3D.jsx'
+import BmoThreeJs from './components/BmoThreeJs.jsx'
 import ChatPanel from './components/ChatPanel.jsx'
 import RadialMenu from './components/RadialMenu.jsx'
 import Toast from './components/Toast.jsx'
@@ -230,7 +231,8 @@ export default function App() {
           isTyping={isTyping}
         />
         <div onDoubleClick={() => setIsChatOpen(true)}>
-          <BmoCss3D physicsDrag={physicsDrag} />
+          {/* <BmoCss3D physicsDrag={physicsDrag} /> */}
+          <BmoThreeJs physicsDrag={physicsDrag} />
         </div>
       </div>
     </div>
