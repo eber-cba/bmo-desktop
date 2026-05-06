@@ -20,13 +20,13 @@ export default function BmoThreeJs({ physicsDrag, onDoubleClick, mood = 'idle' }
     if (!mountRef.current) return;
 
     // ── SCENE & CAMERA ──────────────────────────────────────────────
-    const width = 350; // Lienzo compacto para no chocar con el borde de la ventana
-    const height = 450; 
+    const width = 400; // Lienzo ampliado para que las extremidades no se corten
+    const height = 500; 
     const scene = new THREE.Scene();
     
     // Orthographic or Perspective. Let's use Perspective for depth.
     const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
-    camera.position.set(0, 0, 24); // Cámara mucho más cerca para que BMO sea masivo
+    camera.position.set(0, -1, 28); // Cámara más atrás y un poco abajo para encuadrar pies
 
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, premultipliedAlpha: false });
     // Hack para Electron/Windows: usar blanco transparente en lugar de negro para evitar el halo gris
@@ -59,7 +59,7 @@ export default function BmoThreeJs({ physicsDrag, onDoubleClick, mood = 'idle' }
 
     // ── MATERIALS ───────────────────────────────────────────────────
     // Colores más fieles a la referencia (verde menta brillante)
-    const bodyColor = 0x6be0bd; // Aclarado para que se vea mucho más vivo y menos apagado
+    const bodyColor = 0x78e8c6; // Más brillante y pastel, idéntico a la foto
     const darkSlot = 0x1c3831;
     const screenColor = 0xeafaf1;
 
@@ -73,7 +73,7 @@ export default function BmoThreeJs({ physicsDrag, onDoubleClick, mood = 'idle' }
     scene.add(bmoGroup);
 
     // 1. BODY
-    const w = 7.5, h = 10, d = 5;
+    const w = 7.5, h = 10.5, d = 5; // Altura ajustada perfectamente
     
     // RoundedBox para los bordes suaves como en la referencia
     const bodyGeo = new RoundedBoxGeometry(w, h, d, 6, 0.4);
@@ -81,19 +81,19 @@ export default function BmoThreeJs({ physicsDrag, onDoubleClick, mood = 'idle' }
     bmoGroup.add(bodyMesh);
 
     // 2. SCREEN & FACE
-    const sw = 5.8, sh = 4.4;
+    const sw = 6.2, sh = 4.6; // Pantalla más grande y ancha como en la foto
     
     // Marco oscuro que da el efecto de hundimiento (bevel/inset) para la pantalla
     const frameGeo = new RoundedBoxGeometry(sw + 0.25, sh + 0.25, 0.1, 4, 0.1);
-    const frameMat = new THREE.MeshLambertMaterial({ color: 0x48b898 }); // Verde sombra
+    const frameMat = new THREE.MeshLambertMaterial({ color: 0x4aa68a }); // Verde sombra más ajustado
     const frameMesh = new THREE.Mesh(frameGeo, frameMat);
-    frameMesh.position.set(0, 1.8, d / 2 + 0.05);
+    frameMesh.position.set(0, 2.0, d / 2 + 0.05); // Pantalla bajada a y=2.0
     bmoGroup.add(frameMesh);
 
     // Pantalla en sí
     const screenGeo = new RoundedBoxGeometry(sw, sh, 0.05, 4, 0.05);
     const screenMesh = new THREE.Mesh(screenGeo, screenMat);
-    screenMesh.position.set(0, 1.8, d / 2 + 0.06); 
+    screenMesh.position.set(0, 2.0, d / 2 + 0.06); 
     bmoGroup.add(screenMesh);
 
     // Preparar el CanvasTexture para las caras dinámicas
@@ -108,7 +108,7 @@ export default function BmoThreeJs({ physicsDrag, onDoubleClick, mood = 'idle' }
       new THREE.PlaneGeometry(sw, sh),
       new THREE.MeshBasicMaterial({ map: faceTextureRef.current, transparent: true })
     );
-    facePlane.position.set(0, 0, 0.026); // Apenas encima de la superficie de la pantalla
+    facePlane.position.set(0, 0, 0.04); // Ligeramente más separado para asegurar que SIEMPRE se vea
     screenMesh.add(facePlane);
 
     // 3. BUTTONS (Front panel)
@@ -116,20 +116,20 @@ export default function BmoThreeJs({ physicsDrag, onDoubleClick, mood = 'idle' }
     const btnExtrudeSettings = { depth: 0.15, bevelEnabled: true, bevelSegments: 3, steps: 1, bevelSize: 0.04, bevelThickness: 0.04 };
     
     // Disc drive slot (con borde hundido)
-    const slotW = 3.5, slotH = 0.4;
+    const slotW = 4.0, slotH = 0.5;
     const slotBorderGeo = new RoundedBoxGeometry(slotW + 0.2, slotH + 0.2, 0.05, 4, 0.1);
     const slotBorder = new THREE.Mesh(slotBorderGeo, frameMat);
-    slotBorder.position.set(-0.8, -1.0, d / 2 + 0.05);
+    slotBorder.position.set(-0.8, -0.8, d / 2 + 0.05);
     bmoGroup.add(slotBorder);
     
     const slotMesh = new THREE.Mesh(new RoundedBoxGeometry(slotW, slotH, 0.1, 2, 0.1), darkMat);
-    slotMesh.position.set(-0.8, -1.0, d / 2 + 0.06);
+    slotMesh.position.set(-0.8, -0.8, d / 2 + 0.06);
     bmoGroup.add(slotMesh);
 
     // Materiales de plástico pulido para los botones
     const btnMatOptions = { roughness: 0.2, metalness: 0.1 };
 
-    // D-Pad (Cruz Amarilla)
+    // D-Pad (Cruz Amarilla) - Aumentada la escala
     const yellowMat = new THREE.MeshStandardMaterial({ color: 0xffd700, ...btnMatOptions });
     const dpadShape = new THREE.Shape();
     dpadShape.moveTo(-0.35, -0.35); dpadShape.lineTo(-1.05, -0.35); dpadShape.lineTo(-1.05, 0.35); dpadShape.lineTo(-0.35, 0.35);
@@ -138,6 +138,7 @@ export default function BmoThreeJs({ physicsDrag, onDoubleClick, mood = 'idle' }
     dpadShape.lineTo(-0.35, -0.35);
     const dpadGeo = new THREE.ExtrudeGeometry(dpadShape, btnExtrudeSettings);
     const dpadBtn = new THREE.Mesh(dpadGeo, yellowMat);
+    dpadBtn.scale.set(1.2, 1.2, 1.0);
     dpadBtn.position.set(-1.8, -2.8, d / 2 + 0.02);
     bmoGroup.add(dpadBtn);
 
@@ -151,26 +152,26 @@ export default function BmoThreeJs({ physicsDrag, onDoubleClick, mood = 'idle' }
     triShape.lineTo(0, triR);
     const triGeo = new THREE.ExtrudeGeometry(triShape, btnExtrudeSettings);
     const triBtn = new THREE.Mesh(triGeo, cyanMat);
-    triBtn.position.set(0.6, -2.8, d / 2 + 0.02);
+    triBtn.scale.set(1.3, 1.3, 1.0);
+    triBtn.position.set(0.6, -2.6, d / 2 + 0.02);
     bmoGroup.add(triBtn);
 
     const circleShape = (r) => { const s = new THREE.Shape(); s.absarc(0,0,r,0,Math.PI*2,false); return s; };
 
     // Botón Grande Rojo
     const redMat = new THREE.MeshStandardMaterial({ color: 0xff0055, ...btnMatOptions });
-    const redGeo = new THREE.ExtrudeGeometry(circleShape(0.7), btnExtrudeSettings);
+    const redGeo = new THREE.ExtrudeGeometry(circleShape(0.85), btnExtrudeSettings); // Más grande
     const redBtn = new THREE.Mesh(redGeo, redMat);
-    redBtn.position.set(1.4, -4.0, d / 2 + 0.02);
+    redBtn.position.set(1.6, -4.0, d / 2 + 0.02);
     bmoGroup.add(redBtn);
     
-    // Botón Chico Verde
+    // Botones Chicos (Verde y Azul)
     const greenMat = new THREE.MeshStandardMaterial({ color: 0x00ff00, ...btnMatOptions });
-    const smallBtnGeo = new THREE.ExtrudeGeometry(circleShape(0.35), btnExtrudeSettings);
+    const smallBtnGeo = new THREE.ExtrudeGeometry(circleShape(0.45), btnExtrudeSettings); // Más grande
     const greenBtn = new THREE.Mesh(smallBtnGeo, greenMat);
-    greenBtn.position.set(2.8, -3.2, d / 2 + 0.02);
+    greenBtn.position.set(2.9, -3.0, d / 2 + 0.02);
     bmoGroup.add(greenBtn);
 
-    // Botón Chico Azul (Arriba del verde)
     const blueBtnMat = new THREE.MeshStandardMaterial({ color: 0x2200ff, ...btnMatOptions });
     const topBlueBtn = new THREE.Mesh(smallBtnGeo, blueBtnMat);
     topBlueBtn.position.set(2.4, -1.8, d / 2 + 0.02);
@@ -178,16 +179,16 @@ export default function BmoThreeJs({ physicsDrag, onDoubleClick, mood = 'idle' }
 
     // Botones Select/Start (Píldoras Azules)
     const pillShape = new THREE.Shape();
-    pillShape.absarc(-0.35, 0, 0.15, Math.PI/2, Math.PI*1.5, false);
-    pillShape.absarc(0.35, 0, 0.15, -Math.PI/2, Math.PI/2, false);
+    pillShape.absarc(-0.45, 0, 0.2, Math.PI/2, Math.PI*1.5, false);
+    pillShape.absarc(0.45, 0, 0.2, -Math.PI/2, Math.PI/2, false);
     const pillGeo = new THREE.ExtrudeGeometry(pillShape, btnExtrudeSettings);
     
     const selBtn = new THREE.Mesh(pillGeo, blueBtnMat);
-    selBtn.position.set(-1.8, -4.4, d / 2 + 0.02);
+    selBtn.position.set(-2.0, -4.6, d / 2 + 0.02);
     bmoGroup.add(selBtn);
     
     const startBtn = new THREE.Mesh(pillGeo, blueBtnMat);
-    startBtn.position.set(-0.6, -4.4, d / 2 + 0.02);
+    startBtn.position.set(-0.6, -4.6, d / 2 + 0.02);
     bmoGroup.add(startBtn);
 
     // ── SIDE DETAILS (B M O & Speakers) ─────────────────────────
@@ -671,8 +672,8 @@ export default function BmoThreeJs({ physicsDrag, onDoubleClick, mood = 'idle' }
     <div 
       className="bmo-three-wrapper"
       style={{
-        width: '350px', 
-        height: '450px', 
+        width: '400px', 
+        height: '500px', 
         position: 'relative',
         display: 'flex',
         justifyContent: 'center',
