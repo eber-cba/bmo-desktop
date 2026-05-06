@@ -266,41 +266,48 @@ export default function BmoThreeJs({ physicsDrag, onDoubleClick, mood = 'idle' }
       const backGroup = new THREE.Group();
       const ventMat = new THREE.MeshLambertMaterial({ color: darkSlot });
       
-      // 1. Top Vents (5 ranuras verticales)
-      const ventGeo = new RoundedBoxGeometry(0.25, 3.2, 0.2, 4, 0.1);
+      // 1. Top Vents (5 ranuras verticales más gruesas y cortas)
+      const ventGeo = new RoundedBoxGeometry(0.35, 2.4, 0.2, 4, 0.15);
       for (let i = -2; i <= 2; i++) {
         const vent = new THREE.Mesh(ventGeo, ventMat);
-        vent.position.set(i * 0.85, 2.5, 0);
+        vent.position.set(i * 0.9, 3.2, 0);
         backGroup.add(vent);
       }
 
       // 2. Tapa de Baterías (Centro)
-      const batteryPlateGeo = new RoundedBoxGeometry(4.4, 3.0, 0.1, 4, 0.1);
+      // Usamos un plano oscuro grande atrás y uno claro un poco más chico adelante para hacer el borde
+      const batteryPlateW = 4.8;
+      const batteryPlateH = 3.2;
+
+      // Borde oscuro (hundido)
+      const borderGeo = new RoundedBoxGeometry(batteryPlateW, batteryPlateH, 0.05, 4, 0.2);
+      const borderMesh = new THREE.Mesh(borderGeo, ventMat);
+      borderMesh.position.set(0, 0, 0.02);
+      backGroup.add(borderMesh);
+
+      // Placa interior (color cuerpo)
+      const batteryPlateGeo = new RoundedBoxGeometry(batteryPlateW - 0.2, batteryPlateH - 0.2, 0.1, 4, 0.15);
       const batteryPlateMat = new THREE.MeshLambertMaterial({ color: bodyColor });
       const batteryPlate = new THREE.Mesh(batteryPlateGeo, batteryPlateMat);
-      batteryPlate.position.set(0, -0.6, 0.05); // Ligeramente sobresaliente
+      batteryPlate.position.set(0, 0, 0.05);
+      backGroup.add(batteryPlate);
       
-      // Tornillos de la tapa
-      const screwGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.2, 16);
+      // Tornillos de la tapa (4 agujeros oscuros en las esquinas de la placa interior)
+      const screwGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.2, 16);
+      const sx = (batteryPlateW / 2) - 0.5;
+      const sy = (batteryPlateH / 2) - 0.5;
       const screws = [
-        [-1.8, 0.9], [1.8, 0.9], [-1.8, -0.9], [1.8, -0.9]
+        [-sx, sy], [sx, sy], [-sx, -sy], [sx, -sy]
       ];
       screws.forEach(pos => {
         const screw = new THREE.Mesh(screwGeo, ventMat);
         screw.rotation.x = Math.PI / 2;
-        screw.position.set(pos[0], pos[1] - 0.6, 0.08);
+        screw.position.set(pos[0], pos[1], 0.08);
         backGroup.add(screw);
       });
-      
-      // Borde oscuro para enmarcar la tapa de batería (opcional para más relieve)
-      const borderGeo = new RoundedBoxGeometry(4.6, 3.2, 0.05, 4, 0.1);
-      const borderMesh = new THREE.Mesh(borderGeo, ventMat);
-      borderMesh.position.set(0, -0.6, 0.02);
-      backGroup.add(borderMesh);
-      backGroup.add(batteryPlate);
 
       // 3. Cartridge / IO Slot (Abajo)
-      const cartSlotGeo = new RoundedBoxGeometry(3.0, 0.45, 0.2, 4, 0.1);
+      const cartSlotGeo = new RoundedBoxGeometry(3.5, 0.5, 0.2, 4, 0.1);
       const cartSlot = new THREE.Mesh(cartSlotGeo, ventMat);
       cartSlot.position.set(0, -3.2, 0);
       backGroup.add(cartSlot);
