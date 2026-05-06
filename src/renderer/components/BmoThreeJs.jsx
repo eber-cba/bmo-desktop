@@ -210,7 +210,7 @@ export default function BmoThreeJs({
     triShape.lineTo(0, triR);
     const triGeo = new THREE.ExtrudeGeometry(triShape, btnExtrudeSettings);
     const triBtn = new THREE.Mesh(triGeo, cyanMat);
-    triBtn.position.set(1.4, -1.4, d / 2 + 0.02);
+    triBtn.position.set(1.4, -2.0, d / 2 + 0.02);
     bmoGroup.add(triBtn);
 
     const circleShape = (r) => {
@@ -225,11 +225,11 @@ export default function BmoThreeJs({
       ...btnMatOptions,
     });
     const redGeo = new THREE.ExtrudeGeometry(
-      circleShape(0.6),
+      circleShape(0.4),
       btnExtrudeSettings,
     );
     const redBtn = new THREE.Mesh(redGeo, redMat);
-    redBtn.position.set(1.6, -2.6, d / 2 + 0.02);
+    redBtn.position.set(1.6, -2.9, d / 2 + 0.02);
     bmoGroup.add(redBtn);
 
     // Botones Chicos (Verde y Azul)
@@ -242,7 +242,7 @@ export default function BmoThreeJs({
       btnExtrudeSettings,
     );
     const greenBtn = new THREE.Mesh(greenGeo, greenMat);
-    greenBtn.position.set(2.8, -1.8, d / 2 + 0.02);
+    greenBtn.position.set(2.5, -2.5, d / 2 + 0.02);
     bmoGroup.add(greenBtn);
 
     const blueBtnMat = new THREE.MeshStandardMaterial({
