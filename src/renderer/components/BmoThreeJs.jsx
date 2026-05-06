@@ -77,7 +77,7 @@ export default function BmoThreeJs({
     // Usamos StandardMaterial con un poco de brillo para quitar el efecto "opaco/tiza"
     const bodyMat = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.3, metalness: 0.1 });
     const darkMat = new THREE.MeshStandardMaterial({ color: darkSlot, roughness: 0.5, metalness: 0.1 });
-    const screenMat = new THREE.MeshStandardMaterial({ color: screenColor, roughness: 0.2, metalness: 0.1 });
+    const screenMat = new THREE.MeshBasicMaterial({ color: screenColor });
 
     // ── BMO GROUP (Container for everything) ─────────────────────────
     const bmoGroup = new THREE.Group();
