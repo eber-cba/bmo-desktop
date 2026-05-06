@@ -1,18 +1,24 @@
 import { useEffect, useRef, useState } from 'react'
 import './BmoCss3D.css'
 
-/* ─── Rotación Y con drag de botón derecho ─────────────────────── */
+/* ─── Rotación trackball completa (click derecho) ───────────────── */
 function initDragRotation(positioningEl) {
   let dragging = false
-  let startX = 0
-  let currentY = 20  // ángulo inicial
+  let startX   = 0
+  let startY   = 0
+  let currentY = 20   // rotación horizontal (eje Y)
+  let currentX = -10  // rotación vertical   (eje X)
 
-  positioningEl.style.transform = `rotateY(${currentY}deg)`
+  const applyTransform = () => {
+    positioningEl.style.transform = `rotateY(${currentY}deg) rotateX(${currentX}deg)`
+  }
+  applyTransform()
 
   function onMouseDown(e) {
-    if (e.button !== 2) return   // solo botón derecho
+    if (e.button !== 2) return
     dragging = true
     startX = e.clientX
+    startY = e.clientY
     e.preventDefault()
     e.stopPropagation()
   }
@@ -20,9 +26,12 @@ function initDragRotation(positioningEl) {
   function onMouseMove(e) {
     if (!dragging) return
     const dx = e.clientX - startX
+    const dy = e.clientY - startY
     startX = e.clientX
-    currentY += dx * 0.8
-    positioningEl.style.transform = `rotateY(${currentY}deg)`
+    startY = e.clientY
+    currentY += dx * 0.8   // horizontal → gira en Y
+    currentX -= dy * 0.8   // vertical   → inclina en X (invertido para natural)
+    applyTransform()
     e.preventDefault()
   }
 

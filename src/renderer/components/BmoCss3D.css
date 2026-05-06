@@ -128,7 +128,7 @@
 
 /* LEFT */
 .bmo .left {
-  height: calc(var(--bmo-h) - var(--bmo-r));
+  height: var(--bmo-h);
   background: #67c7a7;
   width: var(--bmo-d);
   transform-style: preserve-3d;
@@ -141,7 +141,7 @@
 
 /* RIGHT */
 .bmo .right {
-  height: calc(var(--bmo-h) - var(--bmo-r));
+  height: var(--bmo-h);
   width: var(--bmo-d);
   background: #67c7a7;
   transform-style: preserve-3d;
@@ -190,17 +190,15 @@
   border-bottom: 2px solid var(--outline);
 }
 
-/* BOTTOM */
+/* BOTTOM — cara inferior completa y lisa (visible al girar 360°) */
 .bmo .bottom {
   transform-style: preserve-3d;
   height: var(--bmo-d);
-  width: calc(var(--bmo-w) - var(--bmo-r) * 2);
+  width: var(--bmo-w);
   background: #75bea2;
-  transform: translateY(calc(var(--bmo-h) - 5em)) translateX(var(--bmo-r)) rotateX(-90deg);
+  transform: translateY(calc(var(--bmo-h) - 5em)) rotateX(-90deg);
   border-top: 2px solid var(--outline);
   border-bottom: 2px solid var(--outline);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
 }
 
 /* LEGS */
@@ -520,11 +518,11 @@
   display: block;
   transform-style: preserve-3d;
 }
-/* Esquinas superiores ocultas — el top es liso como en la referencia */
-.bmo .topleftcorner    { display: none; }
-.bmo .toprightcorner   { display: none; }
-.bmo .bottomrightcorner { transform: translateX(-4.08em) translateY(16.7em); }
-.bmo .bottomleftcorner  { transform: translateX(8.08em) translateY(16.7em); }
+/* Todas las esquinas ocultas — los paneles son altura/ancho completo */
+.bmo .topleftcorner,
+.bmo .toprightcorner,
+.bmo .bottomleftcorner,
+.bmo .bottomrightcorner { display: none; }
 
 /* Corner faces - generated via math (8 faces, 90deg arc, radius=0.9em) */
 /* Top-left corner: angle-start=270 */
