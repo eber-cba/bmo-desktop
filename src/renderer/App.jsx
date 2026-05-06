@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import BmoCss3D from './components/BmoCss3D.jsx'
 import BmoThreeJs from './components/BmoThreeJs.jsx'
 import ChatPanel from './components/ChatPanel.jsx'
-import RadialMenu from './components/RadialMenu.jsx'
 import Toast from './components/Toast.jsx'
 import { useBmoMood } from './hooks/useBmoMood.js'
 import './styles.css'
@@ -15,35 +14,9 @@ export default function App() {
   const { mood, startThinking, startTalking, celebrate, showError } =
     useBmoMood();
 
-  const [radialMenu, setRadialMenu] = useState({ isOpen: false, x: 0, y: 0 });
   const [toast, setToast] = useState({ isVisible: false, message: "" });
 
   const showToast = (message) => setToast({ isVisible: true, message });
-
-  const radialActions = [
-    {
-      label: "Chat",
-      icon: "💬",
-      onClick: () => setIsChatOpen((prev) => !prev),
-    },
-    {
-      label: "YouTube",
-      icon: "🎵",
-      onClick: () => {
-        window.bmo?.executeTool("open_url", { url: "https://youtube.com" });
-        showToast("Abriendo YouTube");
-      },
-    },
-    {
-      label: "Calculadora",
-      icon: "🧮",
-      onClick: () => {
-        window.bmo?.executeTool("open_app", { app_name: "calc" });
-        showToast("Abriendo Calculadora");
-      },
-    },
-    { label: "Cerrar App", icon: "❌", onClick: () => window.close() },
-  ];
 
   // ── Suprimir menú contextual del OS (click derecho = rotar BMO) ───────────
   useEffect(() => {
@@ -69,12 +42,6 @@ export default function App() {
 
     const onMouseDown = (e) => {
       const onRotation = e.target.closest('.positioning');
-
-      if (e.button === 2) {
-        if (onRotation) return;
-        setRadialMenu({ isOpen: true, x: e.clientX, y: e.clientY });
-        return;
-      }
 
       if (e.button === 0) {
         dragging = true;
@@ -210,17 +177,9 @@ export default function App() {
         onClose={() => setToast({ ...toast, isVisible: false })}
       />
 
-      <RadialMenu
-        isOpen={radialMenu.isOpen}
-        x={radialMenu.x}
-        y={radialMenu.y}
-        onClose={() => setRadialMenu((prev) => ({ ...prev, isOpen: false }))}
-        actions={radialActions}
-      />
-
       {/* ref directo — mousedown se registra exactamente en este elemento */}
       <div
-        className={`bmo-wrapper ${radialMenu.isOpen ? "is-menu-open" : ""}`}
+        className="bmo-wrapper"
         ref={bmoWrapperRef}
       >
         <ChatPanel

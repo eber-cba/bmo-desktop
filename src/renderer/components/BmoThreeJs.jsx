@@ -53,10 +53,10 @@ export default function BmoThreeJs({
 
     // ── LIGHTING ────────────────────────────────────────────────────
     // Iluminación plana y brillante tipo juguete
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.4); // Incrementado para mayor brillo global
     scene.add(ambientLight);
     
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.3); // Mayor contraste frontal
     dirLight.position.set(10, 20, 15);
     scene.add(dirLight);
 
@@ -66,7 +66,7 @@ export default function BmoThreeJs({
 
     // ── MATERIALS ───────────────────────────────────────────────────
     // Colores más fieles a la referencia (verde menta brillante)
-    const bodyColor = 0x5bdcb2;  
+    const bodyColor = 0x6be0bd; // Aclarado para que se vea mucho más vivo y menos apagado
     const darkSlot = 0x1c3831;
     const screenColor = 0xeafaf1;
 
