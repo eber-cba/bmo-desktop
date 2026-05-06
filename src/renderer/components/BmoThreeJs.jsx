@@ -210,7 +210,7 @@ export default function BmoThreeJs({
     triShape.lineTo(0, triR);
     const triGeo = new THREE.ExtrudeGeometry(triShape, btnExtrudeSettings);
     const triBtn = new THREE.Mesh(triGeo, cyanMat);
-    triBtn.position.set(0.6, -1.4, d / 2 + 0.02);
+    triBtn.position.set(0.2, -2.0, d / 2 + 0.02);
     bmoGroup.add(triBtn);
 
     const circleShape = (r) => {
@@ -229,7 +229,7 @@ export default function BmoThreeJs({
       btnExtrudeSettings,
     );
     const redBtn = new THREE.Mesh(redGeo, redMat);
-    redBtn.position.set(1.2, -2.4, d / 2 + 0.02);
+    redBtn.position.set(1.4, -3.2, d / 2 + 0.02);
     bmoGroup.add(redBtn);
 
     // Botones Chicos (Verde y Azul)
@@ -242,7 +242,7 @@ export default function BmoThreeJs({
       btnExtrudeSettings,
     );
     const greenBtn = new THREE.Mesh(greenGeo, greenMat);
-    greenBtn.position.set(1.6, -1.4, d / 2 + 0.02);
+    greenBtn.position.set(2.0, -2.0, d / 2 + 0.02);
     bmoGroup.add(greenBtn);
 
     const blueBtnMat = new THREE.MeshStandardMaterial({
@@ -250,7 +250,7 @@ export default function BmoThreeJs({
       ...btnMatOptions,
     });
     const topBlueBtn = new THREE.Mesh(greenGeo, blueBtnMat);
-    topBlueBtn.position.set(1.0, -0.4, d / 2 + 0.02);
+    topBlueBtn.position.set(1.6, -0.4, d / 2 + 0.02);
     bmoGroup.add(topBlueBtn);
 
     // Botones Select/Start (Píldoras Azules)
