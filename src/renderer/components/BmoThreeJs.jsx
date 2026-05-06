@@ -258,8 +258,60 @@ export default function BmoThreeJs({ physicsDrag, onDoubleClick, mood = 'idle' }
       return sideGroup;
     };
     
-    bmoGroup.add(createSideDetails(1));  // Costado derecho
-    bmoGroup.add(createSideDetails(-1)); // Costado izquierdo
+    bmoGroup.add(createSideDetails(-1)); // Left
+    bmoGroup.add(createSideDetails(1));  // Right
+
+    // ── BACK DETAILS (Vents, Battery, Cartridge Slot) ───────────────
+    const createBackDetails = () => {
+      const backGroup = new THREE.Group();
+      const ventMat = new THREE.MeshLambertMaterial({ color: darkSlot });
+      
+      // 1. Top Vents (5 ranuras verticales)
+      const ventGeo = new RoundedBoxGeometry(0.25, 3.2, 0.2, 4, 0.1);
+      for (let i = -2; i <= 2; i++) {
+        const vent = new THREE.Mesh(ventGeo, ventMat);
+        vent.position.set(i * 0.85, 2.5, 0);
+        backGroup.add(vent);
+      }
+
+      // 2. Tapa de Baterías (Centro)
+      const batteryPlateGeo = new RoundedBoxGeometry(4.4, 3.0, 0.1, 4, 0.1);
+      const batteryPlateMat = new THREE.MeshLambertMaterial({ color: bodyColor });
+      const batteryPlate = new THREE.Mesh(batteryPlateGeo, batteryPlateMat);
+      batteryPlate.position.set(0, -0.6, 0.05); // Ligeramente sobresaliente
+      
+      // Tornillos de la tapa
+      const screwGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.2, 16);
+      const screws = [
+        [-1.8, 0.9], [1.8, 0.9], [-1.8, -0.9], [1.8, -0.9]
+      ];
+      screws.forEach(pos => {
+        const screw = new THREE.Mesh(screwGeo, ventMat);
+        screw.rotation.x = Math.PI / 2;
+        screw.position.set(pos[0], pos[1] - 0.6, 0.08);
+        backGroup.add(screw);
+      });
+      
+      // Borde oscuro para enmarcar la tapa de batería (opcional para más relieve)
+      const borderGeo = new RoundedBoxGeometry(4.6, 3.2, 0.05, 4, 0.1);
+      const borderMesh = new THREE.Mesh(borderGeo, ventMat);
+      borderMesh.position.set(0, -0.6, 0.02);
+      backGroup.add(borderMesh);
+      backGroup.add(batteryPlate);
+
+      // 3. Cartridge / IO Slot (Abajo)
+      const cartSlotGeo = new RoundedBoxGeometry(3.0, 0.45, 0.2, 4, 0.1);
+      const cartSlot = new THREE.Mesh(cartSlotGeo, ventMat);
+      cartSlot.position.set(0, -3.2, 0);
+      backGroup.add(cartSlot);
+
+      // Posicionar en la parte de atrás del cuerpo (z = -d/2)
+      backGroup.position.set(0, 0, -d / 2);
+      backGroup.rotation.y = Math.PI; // Rotar 180°
+      return backGroup;
+    };
+    
+    bmoGroup.add(createBackDetails());
 
     // 4. ARMS & LEGS
     // En la referencia, extremidades usan el mismo color del cuerpo
