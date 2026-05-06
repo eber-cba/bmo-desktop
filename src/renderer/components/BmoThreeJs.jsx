@@ -63,9 +63,9 @@ export default function BmoThreeJs({ physicsDrag, onDoubleClick, mood = 'idle' }
 
     // ── MATERIALS ───────────────────────────────────────────────────
     // Colores más fieles a la referencia (verde menta brillante)
-    const bodyColor = 0x51d8b6; // Verde menta pastel claro
+    const bodyColor = 0x6de2c3; // Más claro y vibrante
     const darkSlot = 0x153028;
-    const screenColor = 0xcde0c5; // Gris verdoso muy claro
+    const screenColor = 0xeafaf1; // Más brillante para evitar que se vea oscura
 
     // Usamos Lambert para un look más plano y "cartoon"
     const bodyMat = new THREE.MeshLambertMaterial({ color: bodyColor });
@@ -110,7 +110,7 @@ export default function BmoThreeJs({ physicsDrag, onDoubleClick, mood = 'idle' }
     // Plano súper delgado para la cara apoyado sobre la pantalla
     const facePlane = new THREE.Mesh(
       new THREE.PlaneGeometry(sw, sh),
-      new THREE.MeshBasicMaterial({ map: faceTextureRef.current, transparent: true, opacity: 0.85 })
+      new THREE.MeshBasicMaterial({ map: faceTextureRef.current, transparent: true, opacity: 1.0 })
     );
     facePlane.position.set(0, 0, 0.04);
     screenMesh.add(facePlane);
@@ -200,20 +200,19 @@ export default function BmoThreeJs({ physicsDrag, onDoubleClick, mood = 'idle' }
     // ── SIDE DETAILS (B M O & Speakers) ─────────────────────────
     const createSideDetails = (sideMultiplier) => {
       const sideGroup = new THREE.Group();
-      const letterMat = new THREE.MeshLambertMaterial({ color: darkSlot });
+      const letterMat = new THREE.MeshBasicMaterial({ color: darkSlot }); // Material básico para que parezca una calcomanía plana
       const speakerMat = new THREE.MeshBasicMaterial({ color: darkSlot }); // Dark inside
       
-      // Configuración de relieve para que parezca una fuente de alta calidad
+      // Configuración de relieve nulo (plano como un dibujo)
       const extrudeSettings = { 
-        depth: 0.1, 
-        bevelEnabled: true, 
-        bevelSegments: 3, 
-        steps: 1, 
-        bevelSize: 0.03, 
-        bevelThickness: 0.03 
+        depth: 0.02, // Apenas grosor para no hacer z-fighting
+        bevelEnabled: false 
       };
 
-      // "O" (Forma extruida para que haga juego con el relieve del resto)
+      // Escala global para las letras, para que sean enormes como en la foto
+      const letterScale = 1.6;
+
+      // "O" (Agujero para el brazo)
       const oShape = new THREE.Shape();
       oShape.absarc(0, 0, 0.45, 0, Math.PI * 2, false);
       const oHole = new THREE.Path();
@@ -221,82 +220,66 @@ export default function BmoThreeJs({ physicsDrag, onDoubleClick, mood = 'idle' }
       oShape.holes.push(oHole);
       const geoO = new THREE.ExtrudeGeometry(oShape, extrudeSettings);
       geoO.computeBoundingBox();
-      geoO.translate(0, 0, -0.05);
+      geoO.translate(0, 0, -0.01);
       const meshO = new THREE.Mesh(geoO, letterMat);
-      meshO.position.set(0, -1.0, 0); 
+      meshO.scale.set(letterScale, letterScale, 1.0);
+      meshO.position.set(0, -2.0, 0); // Mucho más abajo! El brazo saldrá de aquí.
       sideGroup.add(meshO);
 
-      // "M" - Dibujada vectorialmente para curvas perfectas
+      // "M" - Dibujada vectorialmente
       const mShape = new THREE.Shape();
-      mShape.moveTo(0, 0);
-      mShape.lineTo(0, 1.0);
-      mShape.lineTo(0.3, 1.0);
-      mShape.lineTo(0.5, 0.4);
-      mShape.lineTo(0.7, 1.0);
-      mShape.lineTo(1.0, 1.0);
-      mShape.lineTo(1.0, 0);
-      mShape.lineTo(0.75, 0);
-      mShape.lineTo(0.75, 0.7);
-      mShape.lineTo(0.5, 0.1);
-      mShape.lineTo(0.25, 0.7);
-      mShape.lineTo(0.25, 0);
-      mShape.lineTo(0, 0);
+      mShape.moveTo(0, 0); mShape.lineTo(0, 1.0); mShape.lineTo(0.3, 1.0); mShape.lineTo(0.5, 0.4);
+      mShape.lineTo(0.7, 1.0); mShape.lineTo(1.0, 1.0); mShape.lineTo(1.0, 0); mShape.lineTo(0.75, 0);
+      mShape.lineTo(0.75, 0.7); mShape.lineTo(0.5, 0.1); mShape.lineTo(0.25, 0.7); mShape.lineTo(0.25, 0); mShape.lineTo(0, 0);
       const geoM = new THREE.ExtrudeGeometry(mShape, extrudeSettings);
       geoM.computeBoundingBox();
       const mCenter = geoM.boundingBox.getCenter(new THREE.Vector3());
-      geoM.translate(-mCenter.x, -mCenter.y, -0.05);
+      geoM.translate(-mCenter.x, -mCenter.y, -0.01);
       const meshM = new THREE.Mesh(geoM, letterMat);
-      meshM.position.set(0, 0.4, 0); // Más junto a la O
+      meshM.scale.set(letterScale, letterScale, 1.0);
+      meshM.position.set(0, 0, 0); // Al medio
       sideGroup.add(meshM);
 
-      // "B" - Dibujada vectorialmente para aros suaves
+      // "B" - Dibujada vectorialmente
       const bShape = new THREE.Shape();
-      bShape.moveTo(0, 0);
-      bShape.lineTo(0, 1.1);
-      bShape.lineTo(0.5, 1.1);
+      bShape.moveTo(0, 0); bShape.lineTo(0, 1.1); bShape.lineTo(0.5, 1.1);
       bShape.absarc(0.5, 0.825, 0.275, Math.PI/2, -Math.PI/2, true);
-      bShape.lineTo(0.4, 0.55);
-      bShape.lineTo(0.5, 0.55);
+      bShape.lineTo(0.4, 0.55); bShape.lineTo(0.5, 0.55);
       bShape.absarc(0.5, 0.275, 0.275, Math.PI/2, -Math.PI/2, true);
       bShape.lineTo(0, 0);
-
       const topHole = new THREE.Path();
-      topHole.moveTo(0.25, 0.70);
-      topHole.lineTo(0.5, 0.70);
-      topHole.absarc(0.5, 0.825, 0.125, -Math.PI/2, Math.PI/2, false);
-      topHole.lineTo(0.25, 0.95);
-      topHole.lineTo(0.25, 0.70);
+      topHole.moveTo(0.25, 0.70); topHole.lineTo(0.5, 0.70); topHole.absarc(0.5, 0.825, 0.125, -Math.PI/2, Math.PI/2, false);
+      topHole.lineTo(0.25, 0.95); topHole.lineTo(0.25, 0.70);
       bShape.holes.push(topHole);
-
       const botHole = new THREE.Path();
-      botHole.moveTo(0.25, 0.15);
-      botHole.lineTo(0.5, 0.15);
-      botHole.absarc(0.5, 0.275, 0.125, -Math.PI/2, Math.PI/2, false);
-      botHole.lineTo(0.25, 0.40);
-      botHole.lineTo(0.25, 0.15);
+      botHole.moveTo(0.25, 0.15); botHole.lineTo(0.5, 0.15); botHole.absarc(0.5, 0.275, 0.125, -Math.PI/2, Math.PI/2, false);
+      botHole.lineTo(0.25, 0.40); botHole.lineTo(0.25, 0.15);
       bShape.holes.push(botHole);
 
       const geoB = new THREE.ExtrudeGeometry(bShape, extrudeSettings);
       geoB.computeBoundingBox();
       const bCenter = geoB.boundingBox.getCenter(new THREE.Vector3());
-      geoB.translate(-bCenter.x, -bCenter.y, -0.05);
+      geoB.translate(-bCenter.x, -bCenter.y, -0.01);
       const meshB = new THREE.Mesh(geoB, letterMat);
-      meshB.position.set(0, 1.8, 0); // Más junto a la M
+      meshB.scale.set(letterScale, letterScale, 1.0);
+      meshB.position.set(0, 2.0, 0); // Arriba
       sideGroup.add(meshB);
 
-      // Agujeros de Parlantes (Hexágono)
+      // Agujeros de Parlantes (Patrón en forma de H)
       const holes = new THREE.Group();
-      const hGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.3, 16);
+      const hGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.1, 16); // Planitos como huecos reales
       const hexHoles = [
-        [0, 0], [0.3, 0.2], [-0.3, 0.2], [0.3, -0.2], [-0.3, -0.2], [0, 0.4], [0, -0.4]
+        [-0.45, 0.45],  [0.45, 0.45],    // Fila superior
+        [-0.45, 0], [0, 0], [0.45, 0],   // Fila media
+        [-0.45, -0.45], [0.45, -0.45]    // Fila inferior
       ];
       hexHoles.forEach(pos => {
         const h = new THREE.Mesh(hGeo, speakerMat);
         h.rotation.x = Math.PI / 2;
-        h.position.set(pos[0], pos[1], 0);
+        h.position.set(pos[0], pos[1], -0.04); // Hundidos en la carcasa
         holes.add(h);
       });
-      holes.position.set(0, 3.4, 0); // Más junto a la B
+      holes.position.set(0, 3.6, 0); // Bien arriba, alejados de las letras
       sideGroup.add(holes);
 
       // Posicionar exactamente en la pared lateral del cuerpo
@@ -373,7 +356,7 @@ export default function BmoThreeJs({ physicsDrag, onDoubleClick, mood = 'idle' }
     
     // Left Arm Group (Viewer's right side)
     const leftArmGroup = new THREE.Group();
-    leftArmGroup.position.set(w / 2, -1.0, 0); // Pegado exactamente a la pared para salir de la "O"
+    leftArmGroup.position.set(w / 2, -2.0, 0); // Ajustado para salir EXACTAMENTE de la "O"
     
     // Brazo cónico (tapered)
     const leftArmMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.25, 4.5, 16), limbMat);
@@ -383,7 +366,7 @@ export default function BmoThreeJs({ physicsDrag, onDoubleClick, mood = 'idle' }
 
     // Right Arm Group (Viewer's left side)
     const rightArmGroup = new THREE.Group();
-    rightArmGroup.position.set(-w / 2, -1.0, 0);
+    rightArmGroup.position.set(-w / 2, -2.0, 0);
     const rightArmMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.25, 4.5, 16), limbMat);
     rightArmMesh.position.set(0, -2.25, 0);
     rightArmGroup.add(rightArmMesh);
